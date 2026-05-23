@@ -4,16 +4,34 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "title",
+    "content_type",
     "summary",
+    "key_points",
     "facts",
     "interpretations",
     "decisions",
-    "actions",
-    "open_questions"
+    "action_items",
+    "open_questions",
+    "risks",
+    "followups",
+    "source_limitations"
   ],
   "properties": {
+    "title": {
+      "type": "string"
+    },
+    "content_type": {
+      "type": "string"
+    },
     "summary": {
       "type": "string"
+    },
+    "key_points": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     },
     "facts": {
       "type": "array",
@@ -33,7 +51,7 @@
         "type": "string"
       }
     },
-    "actions": {
+    "action_items": {
       "type": "array",
       "items": {
         "type": "object",
@@ -57,6 +75,24 @@
       }
     },
     "open_questions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "followups": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source_limitations": {
       "type": "array",
       "items": {
         "type": "string"

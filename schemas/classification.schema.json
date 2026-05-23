@@ -4,12 +4,15 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "content_type",
+    "type",
     "confidence",
-    "reason"
+    "secondary_type",
+    "signals",
+    "reason",
+    "recommended_recipe"
   ],
   "properties": {
-    "content_type": {
+    "type": {
       "type": "string",
       "enum": [
         "generic",
@@ -24,8 +27,34 @@
       "minimum": 0,
       "maximum": 1
     },
+    "secondary_type": {
+      "type": "string",
+      "enum": [
+        "generic",
+        "meeting",
+        "webinar",
+        "youtube_video",
+        "non rilevato"
+      ]
+    },
+    "signals": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "reason": {
       "type": "string"
+    },
+    "recommended_recipe": {
+      "type": "string",
+      "enum": [
+        "recipes/generic.md",
+        "recipes/meeting.md",
+        "recipes/webinar.md",
+        "recipes/youtube_video.md",
+        "non rilevato"
+      ]
     }
   }
 }

@@ -19,11 +19,20 @@ L'obiettivo e' classificare automaticamente il tipo di contenuto e scegliere la 
 ## Flusso previsto
 
 1. Inserire una trascrizione in `input/transcripts/`.
-2. Eseguire la classificazione del contenuto.
-3. Selezionare la recipe appropriata.
-4. Estrarre fatti, interpretazioni, decisioni, azioni e domande aperte.
-5. Generare output Markdown e JSON.
+2. Pulire leggermente il testo senza modificare il significato.
+3. Classificare il contenuto con `type`, `confidence`, `secondary_type`, `signals` e `reason`.
+4. Selezionare la recipe appropriata.
+5. Estrarre informazioni strutturate in base alla recipe.
+6. Separare fatti, interpretazioni, decisioni, action item, rischi, follow-up e domande aperte.
+7. Generare output Markdown e JSON.
+8. Eseguire un controllo qualita' finale per evitare informazioni inventate.
+
+## Metodo
+
+La classificazione guida la strategia di analisi. Quando il tipo di contenuto e' ambiguo, il sistema deve indicare un `secondary_type`, abbassare la `confidence` e usare la recipe `generic` se non ci sono segnali sufficienti.
+
+Le informazioni assenti devono essere marcate come `non rilevato`. Le interpretazioni devono restare separate dai fatti espliciti.
 
 ## Stato attuale
 
-Scaffolding iniziale. La pipeline completa non e' ancora implementata.
+Scaffolding metodologico iniziale. La pipeline completa, la logica AI e le chiamate API non sono ancora implementate.
