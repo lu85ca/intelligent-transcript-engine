@@ -33,6 +33,20 @@ La classificazione guida la strategia di analisi. Quando il tipo di contenuto e'
 
 Le informazioni assenti devono essere marcate come `non rilevato`. Le interpretazioni devono restare separate dai fatti espliciti.
 
+## Utilizzo
+
+Esegui la pipeline locale su una trascrizione Markdown:
+
+```bash
+python3 scripts/run_pipeline.py input/transcripts/example.md
+```
+
+La pipeline genera:
+
+- `output/json/example_classification.json`
+- `output/json/example_analysis.json`
+- `output/markdown/example_summary.md`
+
 ## Stato attuale
 
-Scaffolding metodologico iniziale. La pipeline completa, la logica AI e le chiamate API non sono ancora implementate.
+Prima versione locale rule-based. La logica AI e le chiamate API non sono ancora implementate.
