@@ -1,8 +1,10 @@
 # Intelligent Transcript Engine
 
-`intelligent-transcript-engine` e' un progetto per analizzare file di trascrizione testuale.
+`intelligent-transcript-engine` e' un progetto agent-driven per analizzare file di trascrizione testuale.
 
-L'obiettivo e' classificare automaticamente il tipo di contenuto e scegliere la strategia migliore per estrarre le informazioni piu' utili nel formato piu' adatto.
+L'obiettivo e' far lavorare Codex come agente: leggere regole, skill, recipe, template e trascrizione, classificare il contenuto, generare un prompt ottimizzato e produrre output Markdown e JSON.
+
+Il progetto non usa piu' uno script Python come pipeline principale. Codex/AI e' responsabile di classificare, scegliere la recipe, generare il prompt, applicarlo e salvare gli output.
 
 ## Struttura
 
@@ -10,22 +12,27 @@ L'obiettivo e' classificare automaticamente il tipo di contenuto e scegliere la 
 - `input/transcripts/`: trascrizioni sorgenti da analizzare.
 - `output/markdown/`: risultati leggibili in Markdown.
 - `output/json/`: risultati strutturati in JSON.
+- `output/prompts/`: prompt generati per debug e riproducibilita'.
+- `prompt_templates/`: template per generare e applicare prompt di analisi.
 - `recipes/`: istruzioni di analisi per tipo di contenuto.
 - `schemas/`: schemi JSON per classificazione e output.
-- `scripts/`: script di supporto.
 - `examples/`: esempi e materiale dimostrativo.
 - `.agents/skills/transcript-intelligence/`: skill locale dedicata alla transcript intelligence.
 
-## Flusso previsto
+## Flusso agent-driven
 
 1. Inserire una trascrizione in `input/transcripts/`.
-2. Pulire leggermente il testo senza modificare il significato.
-3. Classificare il contenuto con `type`, `confidence`, `secondary_type`, `signals` e `reason`.
-4. Selezionare la recipe appropriata.
-5. Estrarre informazioni strutturate in base alla recipe.
-6. Separare fatti, interpretazioni, decisioni, action item, rischi, follow-up e domande aperte.
-7. Generare output Markdown e JSON.
-8. Eseguire un controllo qualita' finale per evitare informazioni inventate.
+2. Codex legge `AGENTS.md`.
+3. Codex usa `.agents/skills/transcript-intelligence/SKILL.md`.
+4. Codex classifica la trascrizione.
+5. Codex sceglie la recipe piu' adatta da `recipes/`.
+6. Codex usa i template in `prompt_templates/` per generare un prompt ottimizzato.
+7. Codex salva il prompt in `output/prompts/<nome>_generated_prompt.md`.
+8. Codex applica il prompt alla trascrizione.
+9. Codex salva:
+   - `output/json/<nome>_classification.json`
+   - `output/json/<nome>_analysis.json`
+   - `output/markdown/<nome>_summary.md`
 
 ## Metodo
 
@@ -33,20 +40,30 @@ La classificazione guida la strategia di analisi. Quando il tipo di contenuto e'
 
 Le informazioni assenti devono essere marcate come `non rilevato`. Le interpretazioni devono restare separate dai fatti espliciti.
 
-## Utilizzo
+Regole obbligatorie:
 
-Esegui la pipeline locale su una trascrizione Markdown:
+- non inserire minutaggi nell'output;
+- non inventare informazioni;
+- classificare sempre prima di analizzare;
+- salvare sempre il prompt generato;
+- produrre sempre Markdown e JSON;
+- non aggiungere dipendenze, API esterne o nuovi script.
+
+## How to use with Codex CLI
+
+Esempio pratico:
 
 ```bash
-python3 scripts/run_pipeline.py input/transcripts/example.md
+codex "Analizza input/transcripts/example.md seguendo AGENTS.md, la skill transcript-intelligence, le recipe, gli schema e i prompt template. Genera output/prompts/example_generated_prompt.md, output/json/example_classification.json, output/json/example_analysis.json e output/markdown/example_summary.md."
 ```
 
-La pipeline genera:
+Output atteso:
 
+- `output/prompts/example_generated_prompt.md`
 - `output/json/example_classification.json`
 - `output/json/example_analysis.json`
 - `output/markdown/example_summary.md`
 
 ## Stato attuale
 
-Prima versione locale rule-based. La logica AI e le chiamate API non sono ancora implementate.
+Workflow agent-driven documentato. Non ci sono script di pipeline, dipendenze esterne o chiamate API implementate.
