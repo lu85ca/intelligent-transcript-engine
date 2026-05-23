@@ -1,9 +1,2 @@
-/output/*
-!/output/
-!/output/json/
-!/output/json/.gitkeep
-!/output/markdown/
-!/output/markdown/.gitkeep
-!/output/prompts/
-!/output/prompts/.gitkeep
+/output
 /input
