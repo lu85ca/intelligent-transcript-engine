@@ -1,0 +1,6 @@
+version: 1
+scope: macro_categories.generic
+description: "Termini approvati per contenuti non-meeting senza macro-categoria specifica."
+approved_terms: []
+notes:
+  - "Non promuovere candidati automaticamente."

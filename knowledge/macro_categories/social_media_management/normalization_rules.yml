@@ -1,0 +1,6 @@
+version: 1
+scope: macro_categories.social_media_management
+description: "Regole conservative per contenuti non-meeting di social media management."
+rules: []
+notes:
+  - "Applicare solo con evidenza nel contenuto sorgente."

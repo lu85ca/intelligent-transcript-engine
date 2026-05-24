@@ -1,10 +1,12 @@
 # Intelligent Transcript Engine
 
-`intelligent-transcript-engine` e' un progetto agent-driven per analizzare file di trascrizione testuale.
+`intelligent-transcript-engine` e' un progetto agent-driven per analizzare file di trascrizione testuale, con una futura pipeline locale di preprocessing video/audio.
 
 L'obiettivo e' far lavorare Codex come agente: leggere regole, skill, recipe, template e trascrizione, classificare il contenuto, generare un prompt ottimizzato e produrre output Markdown e JSON.
 
 Il progetto non usa piu' uno script Python come pipeline principale. Codex/AI e' responsabile di classificare, scegliere la recipe, generare il prompt, applicarlo e salvare gli output.
+
+Il preprocessing video/audio, quando implementato, deve restare locale e script-driven: estrazione audio, trascrizione con MLX Whisper large-v3-turbo, normalizzazione conservativa e log tecnici. Gli script di preprocessing non devono analizzare semanticamente il contenuto e non devono invocare Codex.
 
 ## Struttura
 
@@ -16,8 +18,23 @@ Il progetto non usa piu' uno script Python come pipeline principale. Codex/AI e'
 - `prompt_templates/`: template per generare e applicare prompt di analisi.
 - `recipes/`: istruzioni di analisi per tipo di contenuto.
 - `schemas/`: schemi JSON per classificazione e output.
+- `knowledge/`: contesti incrementali, glossari, regole conservative, candidati ed esempi.
 - `examples/`: esempi e materiale dimostrativo.
 - `.agents/skills/transcript-intelligence/`: skill locale dedicata alla transcript intelligence.
+
+## Knowledge context
+
+La knowledge incrementale e' operational metadata: puo' guidare normalizzazione e analisi, ma non deve comparire come contenuto negli output finali.
+
+- `knowledge/global/`: termini e regole davvero trasversali.
+- `knowledge/work_meetings/`: unico contesto per tutte le riunioni di lavoro, incluse IMU, TARI, SIGE, flussi documentali, database, rilasci e riunioni tecnico/funzionali generiche.
+- `knowledge/macro_categories/finance/`: contenuti non-meeting di finanza.
+- `knowledge/macro_categories/travel/`: contenuti non-meeting di viaggio.
+- `knowledge/macro_categories/social_media_management/`: contenuti non-meeting di social media management.
+- `knowledge/macro_categories/generic/`: fallback per contenuti non-meeting.
+- `knowledge/registry.yml`: regole di selezione dei contesti.
+
+I candidati vanno nella cartella `candidates/` del contesto selezionato e non vengono mai promossi automaticamente.
 
 ## Flusso agent-driven
 
@@ -26,10 +43,11 @@ Il progetto non usa piu' uno script Python come pipeline principale. Codex/AI e'
 3. Codex usa `.agents/skills/transcript-intelligence/SKILL.md`.
 4. Codex classifica la trascrizione.
 5. Codex sceglie la recipe piu' adatta da `recipes/`.
-6. Codex usa i template in `prompt_templates/` per generare un prompt ottimizzato.
-7. Codex salva il prompt in `output/prompts/<nome>_generated_prompt.md`.
-8. Codex applica il prompt alla trascrizione.
-9. Codex salva:
+6. Codex seleziona i knowledge context tramite `knowledge/registry.yml`.
+7. Codex usa i template in `prompt_templates/` per generare un prompt ottimizzato.
+8. Codex salva il prompt in `output/prompts/<nome>_generated_prompt.md`.
+9. Codex applica il prompt alla trascrizione.
+10. Codex salva:
    - `output/json/<nome>_classification.json`
    - `output/json/<nome>_analysis.json`
    - `output/markdown/<nome>_summary.md`
@@ -47,7 +65,9 @@ Regole obbligatorie:
 - classificare sempre prima di analizzare;
 - salvare sempre il prompt generato;
 - produrre sempre Markdown e JSON;
-- non aggiungere dipendenze, API esterne o nuovi script.
+- non trattare i file in `knowledge/` come contenuto della trascrizione;
+- non promuovere automaticamente candidati ad approved term;
+- non aggiungere dipendenze o API esterne; gli script di preprocessing non devono invocare Codex; eventuali script di orchestrazione del workflow che invocano Codex CLI devono essere introdotti solo in uno step dedicato e richiesto esplicitamente.
 
 ## How to use with Codex CLI
 
@@ -66,4 +86,4 @@ Output atteso:
 
 ## Stato attuale
 
-Workflow agent-driven documentato. Non ci sono script di pipeline, dipendenze esterne o chiamate API implementate.
+Workflow agent-driven documentato. Struttura `knowledge/` iniziale presente. Non ci sono ancora script di pipeline, dipendenze esterne o chiamate API implementate.

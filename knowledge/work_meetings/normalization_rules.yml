@@ -1,0 +1,8 @@
+version: 1
+scope: work_meetings
+description: "Regole conservative per riunioni di lavoro."
+rules: []
+notes:
+  - "Le regole valgono per tutte le riunioni di lavoro, indipendentemente dal dominio specifico."
+  - "Termini come IMU, TARI, SIGE, Libra, STARDAS e DoQui Acta, se approvati, appartengono a questo contesto unico."
+  - "Non citare questo file come fonte negli output finali."

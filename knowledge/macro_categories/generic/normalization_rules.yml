@@ -1,0 +1,6 @@
+version: 1
+scope: macro_categories.generic
+description: "Regole conservative per contenuti non-meeting senza macro-categoria specifica."
+rules: []
+notes:
+  - "Applicare solo con evidenza nel contenuto sorgente."

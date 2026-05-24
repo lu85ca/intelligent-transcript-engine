@@ -1,0 +1,6 @@
+version: 1
+scope: macro_categories.social_media_management
+description: "Termini approvati per contenuti non-meeting di social media management."
+approved_terms: []
+notes:
+  - "Non promuovere candidati automaticamente."

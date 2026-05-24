@@ -1,0 +1,6 @@
+version: 1
+scope: macro_categories.finance
+description: "Regole conservative per contenuti non-meeting di finanza."
+rules: []
+notes:
+  - "Applicare solo con evidenza nel contenuto sorgente."

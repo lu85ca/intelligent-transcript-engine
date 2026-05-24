@@ -1,0 +1,100 @@
+version: 1
+description: "Registry dei knowledge context incrementali."
+operational_metadata: true
+manual_candidate_promotion: true
+
+preprocessing_architecture:
+  audio_video_pipeline: "planned_local_script_driven"
+  transcription_model: "MLX Whisper large-v3-turbo"
+  deterministic_steps:
+    - "estrazione audio"
+    - "trascrizione"
+    - "normalizzazione conservativa"
+  agent_driven_steps:
+    - "classificazione"
+    - "scelta recipe"
+    - "generated_prompt.md"
+    - "summary.md"
+    - "classification.json"
+    - "analysis.json"
+  constraints:
+    - "Gli script preparano input e log tecnici."
+    - "Gli script non analizzano semanticamente il contenuto."
+    - "Gli script non invocano Codex."
+    - "Nessun watcher automatico."
+    - "Nessuna API esterna."
+
+contexts:
+  global:
+    path: "knowledge/global"
+    load_when: "always"
+    files:
+      approved_terms: "knowledge/global/approved_terms.yml"
+      normalization_rules: "knowledge/global/normalization_rules.yml"
+      context: "knowledge/global/context.md"
+
+  work_meetings:
+    path: "knowledge/work_meetings"
+    load_when: "content type is meeting, including generic_meeting and technical_flow_meeting"
+    candidate_path: "knowledge/work_meetings/candidates"
+    examples_path: "knowledge/work_meetings/examples"
+    files:
+      approved_terms: "knowledge/work_meetings/approved_terms.yml"
+      normalization_rules: "knowledge/work_meetings/normalization_rules.yml"
+      context: "knowledge/work_meetings/context.md"
+    applies_to_examples:
+      - "riunione su IMU"
+      - "riunione su TARI"
+      - "riunione su SIGE"
+      - "riunione su flussi documentali"
+      - "riunione su database"
+      - "riunione su rilasci"
+      - "riunione tecnica/funzionale generica"
+
+  macro_categories:
+    finance:
+      path: "knowledge/macro_categories/finance"
+      load_when: "non-meeting content classified as finance"
+      candidate_path: "knowledge/macro_categories/finance/candidates"
+      examples_path: "knowledge/macro_categories/finance/examples"
+      files:
+        approved_terms: "knowledge/macro_categories/finance/approved_terms.yml"
+        normalization_rules: "knowledge/macro_categories/finance/normalization_rules.yml"
+        context: "knowledge/macro_categories/finance/context.md"
+    travel:
+      path: "knowledge/macro_categories/travel"
+      load_when: "non-meeting content classified as travel"
+      candidate_path: "knowledge/macro_categories/travel/candidates"
+      examples_path: "knowledge/macro_categories/travel/examples"
+      files:
+        approved_terms: "knowledge/macro_categories/travel/approved_terms.yml"
+        normalization_rules: "knowledge/macro_categories/travel/normalization_rules.yml"
+        context: "knowledge/macro_categories/travel/context.md"
+    social_media_management:
+      path: "knowledge/macro_categories/social_media_management"
+      load_when: "non-meeting content classified as social_media_management"
+      candidate_path: "knowledge/macro_categories/social_media_management/candidates"
+      examples_path: "knowledge/macro_categories/social_media_management/examples"
+      files:
+        approved_terms: "knowledge/macro_categories/social_media_management/approved_terms.yml"
+        normalization_rules: "knowledge/macro_categories/social_media_management/normalization_rules.yml"
+        context: "knowledge/macro_categories/social_media_management/context.md"
+    generic:
+      path: "knowledge/macro_categories/generic"
+      load_when: "non-meeting fallback when no macro-category is clear"
+      candidate_path: "knowledge/macro_categories/generic/candidates"
+      examples_path: "knowledge/macro_categories/generic/examples"
+      files:
+        approved_terms: "knowledge/macro_categories/generic/approved_terms.yml"
+        normalization_rules: "knowledge/macro_categories/generic/normalization_rules.yml"
+        context: "knowledge/macro_categories/generic/context.md"
+
+selection_rules:
+  - "Load knowledge/global for every run."
+  - "For every work meeting, load knowledge/work_meetings regardless of the specific business domain."
+  - "Do not create domain-specific knowledge folders for IMU, TARI, SIGE, Libra, STARDAS, DoQui Acta or similar terms."
+  - "For non-meeting content, load exactly one macro-category context when clear."
+  - "Use knowledge/macro_categories/generic as fallback for non-meeting content."
+  - "Candidates are routed to the selected context candidate_path."
+  - "Candidates are never promoted automatically."
+  - "Knowledge files can guide normalization and analysis but must not appear as content in final outputs."

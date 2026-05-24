@@ -1,0 +1,7 @@
+version: 1
+scope: global
+description: "Termini approvati trasversali a tutti i contenuti."
+approved_terms: []
+notes:
+  - "Usare solo per termini realmente trasversali."
+  - "Non promuovere candidati automaticamente."

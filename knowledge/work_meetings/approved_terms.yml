@@ -1,0 +1,8 @@
+version: 1
+scope: work_meetings
+description: "Termini approvati per riunioni di lavoro di qualunque dominio."
+approved_terms: []
+notes:
+  - "Include riunioni su IMU, TARI, SIGE, flussi documentali, database, rilasci e riunioni tecnico/funzionali generiche."
+  - "Non creare sottocartelle per domini specifici."
+  - "La promozione da candidates ad approved_terms resta manuale."

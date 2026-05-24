@@ -1,0 +1,6 @@
+version: 1
+scope: macro_categories.finance
+description: "Termini approvati per contenuti non-meeting di finanza."
+approved_terms: []
+notes:
+  - "Non promuovere candidati automaticamente."

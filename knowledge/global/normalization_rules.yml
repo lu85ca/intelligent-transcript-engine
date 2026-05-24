@@ -1,0 +1,7 @@
+version: 1
+scope: global
+description: "Regole di normalizzazione trasversali a tutti i contenuti."
+rules: []
+notes:
+  - "Applicare solo quando la trascrizione supporta chiaramente la normalizzazione."
+  - "Non usare queste regole come contenuto del summary o di analysis.json."
