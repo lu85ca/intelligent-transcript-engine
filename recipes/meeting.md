@@ -2,11 +2,14 @@
 
 Usa questa recipe quando la trascrizione rappresenta una riunione, una call operativa o una discussione di lavoro.
 
+Nota: se la riunione è focalizzata sulla ricostruzione di un flusso applicativo, tecnico o funzionale end-to-end, usare `recipes/technical_flow_meeting.md` invece della meeting generica.
+
 ## Quando usarla
 
 - Meeting interni o con clienti.
 - Standup, retrospettive, pianificazioni, review o call operative.
 - Discussioni con decisioni, responsabilita' o prossime azioni.
+- Riunioni non centrate sulla ricostruzione dettagliata di un flusso applicativo end-to-end.
 
 ## Segnali da riconoscere
 

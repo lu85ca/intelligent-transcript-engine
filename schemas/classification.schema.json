@@ -5,11 +5,13 @@
   "additionalProperties": false,
   "required": [
     "type",
+    "subtype",
     "confidence",
     "secondary_type",
+    "selected_recipe",
+    "selected_domain_profile",
     "signals",
-    "reason",
-    "recommended_recipe"
+    "reason"
   ],
   "properties": {
     "type": {
@@ -19,6 +21,14 @@
         "meeting",
         "webinar",
         "youtube_video",
+        "non rilevato"
+      ]
+    },
+    "subtype": {
+      "type": "string",
+      "enum": [
+        "generic_meeting",
+        "technical_flow_meeting",
         "non rilevato"
       ]
     },
@@ -37,6 +47,24 @@
         "non rilevato"
       ]
     },
+    "selected_recipe": {
+      "type": "string",
+      "enum": [
+        "recipes/generic.md",
+        "recipes/meeting.md",
+        "recipes/technical_flow_meeting.md",
+        "recipes/webinar.md",
+        "recipes/youtube_video.md",
+        "non rilevato"
+      ]
+    },
+    "selected_domain_profile": {
+      "type": "string",
+      "enum": [
+        "domain_profiles/sige_imu_document_flow.md",
+        "non rilevato"
+      ]
+    },
     "signals": {
       "type": "array",
       "items": {
@@ -45,16 +73,6 @@
     },
     "reason": {
       "type": "string"
-    },
-    "recommended_recipe": {
-      "type": "string",
-      "enum": [
-        "recipes/generic.md",
-        "recipes/meeting.md",
-        "recipes/webinar.md",
-        "recipes/youtube_video.md",
-        "non rilevato"
-      ]
     }
   }
 }
