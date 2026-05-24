@@ -46,6 +46,8 @@ La pipeline di preprocessing video/audio deve seguire questi confini:
 - non aggiungere API esterne non richieste;
 - la classificazione e l'analisi finale restano agent-driven.
 
+I file generati dal preprocessing, inclusi frontmatter della trascrizione raw e log tecnici in `output/preprocessing/` e `output/transcription/`, sono operational metadata. Anche campi tecnici come `quality_warnings`, `normalization_candidates` e `safe_for_analysis` sono operational metadata: possono aiutare tracciabilita', debug e decisioni operative sulla qualita' dell'input, ma non devono finire come contenuto in `summary.md` o `analysis.json`. Il workflow agent-driven inizia dalla trascrizione testuale preparata e deve continuare a distinguere contenuto sorgente e metadati tecnici. I warning tecnici non devono essere trattati come fatti del webinar o della riunione.
+
 ## Knowledge incrementale
 
 La conoscenza incrementale vive in `knowledge/` ed e' operational metadata.
