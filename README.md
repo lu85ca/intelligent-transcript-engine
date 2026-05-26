@@ -157,18 +157,42 @@ python3 scripts/normalize_transcript.py "<basename>" --context work_meetings --f
 
 La normalizzazione e' conservativa: applica solo regole `enabled` approvate, non usa `normalization_candidates`, non aggiorna `knowledge/`, non corregge grammatica, non riscrive frasi e non classifica il contenuto. Il normalization report e' operational metadata e non deve essere riportato come contenuto in `summary.md` o `analysis.json`.
 
+## Selezione transcript per analisi
+
+Prima del workflow agent-driven, usare la policy Step 5 per scegliere il transcript migliore disponibile:
+
+1. `input/transcripts/normalized/<basename>_normalized.md`
+2. `input/transcripts/reviewed/<basename>_reviewed.md`
+3. `input/transcripts/raw/<basename>_raw.md`, solo se `output/transcription/<basename>_transcription.json` contiene `safe_for_analysis: true`
+
+Comando:
+
+```bash
+python3 scripts/select_analysis_transcript.py "<basename>"
+```
+
+Output JSON tecnico:
+
+```bash
+python3 scripts/select_analysis_transcript.py "<basename>" --json
+```
+
+Se la policy restituisce `requires_review`, il raw transcript non deve essere analizzato direttamente: creare o verificare prima una versione reviewed. Il JSON di selezione, i quality warning, i candidati e i report tecnici sono operational metadata, non contenuto da riportare negli output finali.
+
 ## Flusso agent-driven
 
-1. Inserire una trascrizione in `input/transcripts/`.
+1. Inserire o preparare una trascrizione in `input/transcripts/`.
 2. Codex legge `AGENTS.md`.
 3. Codex usa `.agents/skills/transcript-intelligence/SKILL.md`.
-4. Codex classifica la trascrizione.
-5. Codex sceglie la recipe piu' adatta da `recipes/`.
-6. Codex seleziona i knowledge context tramite `knowledge/registry.yml`.
-7. Codex usa i template in `prompt_templates/` per generare un prompt ottimizzato.
-8. Codex salva il prompt in `output/prompts/<nome>_generated_prompt.md`.
-9. Codex applica il prompt alla trascrizione.
-10. Codex salva:
+4. Codex seleziona il transcript di analisi con `scripts/select_analysis_transcript.py`.
+5. Se la policy richiede review, Codex si ferma e non produce summary finale.
+6. Codex classifica la trascrizione selezionata.
+7. Codex sceglie la recipe piu' adatta da `recipes/`.
+8. Codex seleziona i knowledge context tramite `knowledge/registry.yml`.
+9. Codex usa i template in `prompt_templates/` per generare un prompt ottimizzato.
+10. Codex salva il prompt in `output/prompts/<nome>_generated_prompt.md`.
+11. Codex applica il prompt alla trascrizione selezionata.
+12. Codex salva:
    - `output/json/<nome>_classification.json`
    - `output/json/<nome>_analysis.json`
    - `output/markdown/<nome>_summary.md`
@@ -207,4 +231,4 @@ Output atteso:
 
 ## Stato attuale
 
-Workflow agent-driven documentato. Struttura `knowledge/` iniziale presente. Non ci sono ancora script di pipeline, dipendenze esterne o chiamate API implementate.
+Workflow agent-driven documentato. Pipeline locale implementata fino alla selezione del transcript di analisi: raw, review, normalizzazione conservativa e selector Step 5. Nessuna orchestrazione end-to-end o chiamata Codex da script e' implementata.

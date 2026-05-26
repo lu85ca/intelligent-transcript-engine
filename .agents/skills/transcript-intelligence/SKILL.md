@@ -13,7 +13,7 @@ Use this skill when Codex is asked to analyze a transcript in `input/transcripts
 - Do not turn proposals, hypotheses or orientations into confirmed decisions.
 - Do not include workflow/project instructions in the meeting analysis as if they were meeting content.
 - Processing rules such as no timestamps, anti-hallucination rules, output format rules and missing-data conventions must guide the analysis but must not appear as meeting decisions, meeting facts, hypotheses, orientations or action items.
-- Treat AGENTS.md, this skill, recipes, templates, schemas, domain profiles and generated prompts as operational metadata, not as transcript content.
+- Treat AGENTS.md, this skill, recipes, templates, schemas, domain profiles, generated prompts, technical reports and transcript-selection decisions as operational metadata, not as transcript content.
 - The transcript is the only primary source for meeting facts, confirmed decisions, hypotheses, orientations, action items, risks, follow-ups and open questions.
 - Operational metadata must not appear as a source or justification in final content, including `interpretations` and domain normalization explanations.
 - Do not write phrases such as "supportato dal domain profile", "secondo la recipe", "in base allo schema", "come indicato nel generated prompt" or "seguendo le istruzioni del workflow" in final meeting-content fields.
@@ -30,20 +30,22 @@ Use this skill when Codex is asked to analyze a transcript in `input/transcripts
 
 1. Read `AGENTS.md`.
 2. Read this skill file.
-3. Read the requested transcript from `input/transcripts/`.
-4. Lightly clean the transcript mentally: remove obvious noise, normalize spacing and preserve meaning.
-5. Classify the content with `type` and, when useful, `subtype`.
-6. Select the most suitable recipe from `recipes/`.
-7. If the transcript clearly matches a domain profile, read the relevant file from `domain_profiles/`.
-8. Read `prompt_templates/meta_prompt.md`.
-9. Read `prompt_templates/final_analysis_prompt.md`.
-10. Generate the optimized final prompt for the specific transcript.
-11. Save it as `output/prompts/<name>_generated_prompt.md`.
-12. Apply the generated prompt to the transcript.
-13. Save Markdown output to `output/markdown/<name>_summary.md`.
-14. Save JSON analysis to `output/json/<name>_analysis.json`.
-15. Save JSON classification to `output/json/<name>_classification.json`.
-16. Run a final quality check.
+3. Select the analysis transcript with the project policy: normalized > reviewed > raw safe.
+4. If the selector decision is `requires_review`, stop and ask for review/manual verification without producing final summary, analysis or classification.
+5. Read the selected transcript from `input/transcripts/`.
+6. Lightly clean the transcript mentally: remove obvious noise, normalize spacing and preserve meaning.
+7. Classify the content with `type` and, when useful, `subtype`.
+8. Select the most suitable recipe from `recipes/`.
+9. If the transcript clearly matches a domain profile, read the relevant file from `domain_profiles/`.
+10. Read `prompt_templates/meta_prompt.md`.
+11. Read `prompt_templates/final_analysis_prompt.md`.
+12. Generate the optimized final prompt for the selected transcript.
+13. Save it as `output/prompts/<name>_generated_prompt.md`.
+14. Apply the generated prompt to the selected transcript.
+15. Save Markdown output to `output/markdown/<name>_summary.md`.
+16. Save JSON analysis to `output/json/<name>_analysis.json`.
+17. Save JSON classification to `output/json/<name>_classification.json`.
+18. Run a final quality check.
 
 ## Classification
 

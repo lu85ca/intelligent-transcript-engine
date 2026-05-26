@@ -48,9 +48,9 @@ La pipeline di preprocessing video/audio deve seguire questi confini:
 
 I file generati dal preprocessing, inclusi frontmatter della trascrizione raw e log tecnici in `output/preprocessing/` e `output/transcription/`, sono operational metadata. Anche campi tecnici come `quality_warnings`, `normalization_candidates` e `safe_for_analysis` sono operational metadata: possono aiutare tracciabilita', debug e decisioni operative sulla qualita' dell'input, ma non devono finire come contenuto in `summary.md` o `analysis.json`. Il workflow agent-driven inizia dalla trascrizione testuale preparata e deve continuare a distinguere contenuto sorgente e metadati tecnici. I warning tecnici non devono essere trattati come fatti del webinar o della riunione.
 
-Se esiste una versione in `input/transcripts/reviewed/`, il workflow agent-driven deve preferire quella alla trascrizione raw corrispondente. Se il JSON tecnico di trascrizione indica `safe_for_analysis: false`, non usare direttamente il raw transcript per produrre summary o analysis finali: preparare prima una versione reviewed. I report in `output/review/` e il frontmatter dei transcript reviewed sono operational metadata e input preparatori, non fatti del contenuto.
+Prima dell'analisi agent-driven, selezionare il transcript con la policy `normalized > reviewed > raw safe`, usando `scripts/select_analysis_transcript.py` quando utile. Se esiste una versione in `input/transcripts/normalized/`, usare quella. Se non esiste normalized ma esiste una versione in `input/transcripts/reviewed/`, usare reviewed. Se esiste solo raw, usarlo solo quando il JSON tecnico di trascrizione contiene `safe_for_analysis: true`.
 
-Se esiste una versione in `input/transcripts/normalized/`, il workflow agent-driven deve preferire quella alla versione reviewed corrispondente. Il normalization report in `output/normalization/` e il frontmatter dei transcript normalized sono operational metadata: tracciano sostituzioni approvate ma non sono fatti, decisioni, interpretazioni o contenuti del video/riunione. I `normalization_candidates` non devono essere applicati automaticamente e la loro promozione resta manuale.
+Se esiste solo raw e `safe_for_analysis` e' `false`, `null`, assente o non verificabile, fermarsi e chiedere review/verifica manuale: non produrre summary o analysis finali. I report in `output/review/`, `output/normalization/`, il JSON tecnico di selezione e il frontmatter dei transcript reviewed/normalized sono operational metadata e input preparatori, non fatti del contenuto. I `normalization_candidates` non devono essere applicati automaticamente e la loro promozione resta manuale.
 
 ## Knowledge incrementale
 
@@ -131,21 +131,23 @@ Per ogni trascrizione in `input/transcripts/`, Codex deve:
 
 1. Leggere questo file `AGENTS.md`.
 2. Usare la skill `.agents/skills/transcript-intelligence/SKILL.md`.
-3. Leggere la trascrizione richiesta.
-4. Classificare il tipo di contenuto con `type`, `subtype`, `confidence`, `secondary_type`, `selected_recipe`, `selected_domain_profile`, `signals` e `reason`.
-5. Scegliere la recipe piu' adatta da `recipes/`.
-6. Selezionare il knowledge context seguendo `knowledge/registry.yml`.
-7. Per riunioni di lavoro, usare sempre `knowledge/global/` e `knowledge/work_meetings/`.
-8. Per contenuti non-meeting, usare `knowledge/global/` e una macro-categoria in `knowledge/macro_categories/`, oppure `generic` come fallback.
-9. Se strettamente pertinente e gia' previsto dal progetto, scegliere un domain profile da `domain_profiles/` e dichiararlo nella classification; non creare nuovi domain profile granulari.
-10. Leggere `prompt_templates/meta_prompt.md` e `prompt_templates/final_analysis_prompt.md`.
-11. Generare un prompt ottimizzato per la trascrizione specifica.
-12. Salvare il prompt in `output/prompts/<nome>_generated_prompt.md`.
-13. Applicare il prompt alla trascrizione.
-14. Salvare la classificazione in `output/json/<nome>_classification.json`.
-15. Salvare l'analisi strutturata in `output/json/<nome>_analysis.json`.
-16. Salvare il riepilogo leggibile in `output/markdown/<nome>_summary.md`.
-17. Fare un controllo qualita' finale su completezza, tracciabilita', assenza di invenzioni e rispetto degli schemi.
+3. Selezionare il transcript da analizzare con priorita' `normalized > reviewed > raw safe`.
+4. Se la policy restituisce `requires_review`, fermarsi e chiedere review/verifica manuale senza produrre output finali.
+5. Leggere la trascrizione selezionata.
+6. Classificare il tipo di contenuto con `type`, `subtype`, `confidence`, `secondary_type`, `selected_recipe`, `selected_domain_profile`, `signals` e `reason`.
+7. Scegliere la recipe piu' adatta da `recipes/`.
+8. Selezionare il knowledge context seguendo `knowledge/registry.yml`.
+9. Per riunioni di lavoro, usare sempre `knowledge/global/` e `knowledge/work_meetings/`.
+10. Per contenuti non-meeting, usare `knowledge/global/` e una macro-categoria in `knowledge/macro_categories/`, oppure `generic` come fallback.
+11. Se strettamente pertinente e gia' previsto dal progetto, scegliere un domain profile da `domain_profiles/` e dichiararlo nella classification; non creare nuovi domain profile granulari.
+12. Leggere `prompt_templates/meta_prompt.md` e `prompt_templates/final_analysis_prompt.md`.
+13. Generare un prompt ottimizzato per la trascrizione selezionata.
+14. Salvare il prompt in `output/prompts/<nome>_generated_prompt.md`.
+15. Applicare il prompt alla trascrizione selezionata.
+16. Salvare la classificazione in `output/json/<nome>_classification.json`.
+17. Salvare l'analisi strutturata in `output/json/<nome>_analysis.json`.
+18. Salvare il riepilogo leggibile in `output/markdown/<nome>_summary.md`.
+19. Fare un controllo qualita' finale su completezza, tracciabilita', assenza di invenzioni e rispetto degli schemi.
 
 ## Output atteso
 
