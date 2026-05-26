@@ -103,6 +103,30 @@ Controllo manuale per verificare che un report tecnico ricco non venga svuotato 
 python3 scripts/transcribe_audio_mlx.py input/audio/<basename>.wav
 ```
 
+## Reviewed transcripts
+
+Quando `output/transcription/<basename>_transcription.json` contiene `safe_for_analysis: false`, il raw transcript non dovrebbe essere usato direttamente dal workflow agent-driven. Preparare prima una versione reviewed in `input/transcripts/reviewed/`.
+
+Differenza:
+
+- `input/transcripts/raw/`: output grezzo di MLX Whisper, invariato.
+- `input/transcripts/reviewed/`: copia revisionabile con frontmatter aggiornato ed eventuale safe cleanup tecnico.
+- `output/review/`: report tecnico della review.
+
+Creare un reviewed draft conservativo, senza rimuovere o correggere testo:
+
+```bash
+python3 scripts/prepare_review_transcript.py input/transcripts/raw/<basename>_raw.md
+```
+
+Applicare safe cleanup opzionale su ripetizioni tecniche evidenti:
+
+```bash
+python3 scripts/prepare_review_transcript.py input/transcripts/raw/<basename>_raw.md --apply-safe-cleanup
+```
+
+La normalizzazione automatica non e' ancora implementata. I `normalization_candidates` vengono riportati nel report di review ma non modificano il transcript e non aggiornano `knowledge/`.
+
 ## Flusso agent-driven
 
 1. Inserire una trascrizione in `input/transcripts/`.
