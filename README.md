@@ -221,20 +221,51 @@ python3 scripts/select_analysis_transcript.py "<basename>" --json
 
 Se la policy restituisce `requires_review`, il raw transcript non deve essere analizzato direttamente: creare o verificare prima una versione reviewed. Il JSON di selezione, i quality warning, i candidati e i report tecnici sono operational metadata, non contenuto da riportare negli output finali.
 
+## Runner preprocessing
+
+Step 6A coordina gli step deterministici gia' validati e produce un report operativo in `output/pipeline/`. Non invoca Codex, non classifica e non genera summary, prompt o analysis.
+
+Da basename:
+
+```bash
+python3 scripts/run_preprocessing_pipeline.py "<basename>" --context work_meetings
+```
+
+Da video in `input/videos/` o audio WAV in `input/audio/`:
+
+```bash
+python3 scripts/run_preprocessing_pipeline.py "input/videos/video.mkv" --context work_meetings
+```
+
+Ultimo video caricato:
+
+```bash
+python3 scripts/run_preprocessing_pipeline.py --latest-video --context work_meetings
+```
+
+Dry run JSON:
+
+```bash
+python3 scripts/run_preprocessing_pipeline.py "<basename>" --context work_meetings --dry-run --json
+```
+
+Il runner esegue o salta in modo idempotente: trascrizione raw, review, normalizzazione, raccolta candidati e selezione transcript. Se il report finale contiene `ready_for_agent_analysis: true`, usare `selected_transcript` come unico contenuto per il workflow agent-driven. Se contiene `requires_manual_review: true`, fermarsi e revisionare prima di generare il summary finale.
+
 ## Flusso agent-driven
 
 1. Inserire o preparare una trascrizione in `input/transcripts/`.
 2. Codex legge `AGENTS.md`.
 3. Codex usa `.agents/skills/transcript-intelligence/SKILL.md`.
-4. Codex seleziona il transcript di analisi con `scripts/select_analysis_transcript.py`.
-5. Se la policy richiede review, Codex si ferma e non produce summary finale.
-6. Codex classifica la trascrizione selezionata.
-7. Codex sceglie la recipe piu' adatta da `recipes/`.
-8. Codex seleziona i knowledge context tramite `knowledge/registry.yml`.
-9. Codex usa i template in `prompt_templates/` per generare un prompt ottimizzato.
-10. Codex salva il prompt in `output/prompts/<nome>_generated_prompt.md`.
-11. Codex applica il prompt alla trascrizione selezionata.
-12. Codex salva:
+4. Per video/audio o input non ancora preparati, Codex esegue Step 6A con `scripts/run_preprocessing_pipeline.py`.
+5. Codex seleziona il transcript di analisi dal report Step 6A o con `scripts/select_analysis_transcript.py`.
+6. Se la policy richiede review, Codex si ferma e non produce summary finale.
+7. Codex classifica la trascrizione selezionata.
+8. Codex sceglie la recipe piu' adatta da `recipes/`.
+9. Codex seleziona i knowledge context tramite `knowledge/registry.yml`.
+10. Codex usa i template in `prompt_templates/` per generare un prompt ottimizzato.
+11. Codex salva il prompt in `output/prompts/<nome>_generated_prompt.md`.
+12. Codex applica il prompt alla trascrizione selezionata.
+13. Codex salva:
    - `output/json/<nome>_classification.json`
    - `output/json/<nome>_analysis.json`
    - `output/markdown/<nome>_summary.md`
@@ -273,4 +304,4 @@ Output atteso:
 
 ## Stato attuale
 
-Workflow agent-driven documentato. Pipeline locale implementata fino a raw, review, gestione candidati, normalizzazione conservativa e selezione del transcript di analisi. Nessuna orchestrazione end-to-end o chiamata Codex da script e' implementata.
+Workflow agent-driven documentato. Pipeline locale implementata fino al runner Step 6A: raw, review, gestione candidati, normalizzazione conservativa e selezione del transcript di analisi. Nessuna orchestrazione end-to-end agent-driven o chiamata Codex da script e' implementata.

@@ -17,6 +17,7 @@ Use this skill when Codex is asked to analyze a transcript in `input/transcripts
 - The transcript is the only primary source for meeting facts, confirmed decisions, hypotheses, orientations, action items, risks, follow-ups and open questions.
 - Operational metadata must not appear as a source or justification in final content, including `interpretations` and domain normalization explanations.
 - Candidate suggestions are not approved terms or active normalization rules. Do not apply candidates unless they have been manually promoted into approved knowledge files.
+- For video/audio requests, run the deterministic Step 6A preprocessing runner first. If the pipeline report is not ready for agent analysis, stop and ask for review instead of producing final outputs.
 - Do not write phrases such as "supportato dal domain profile", "secondo la recipe", "in base allo schema", "come indicato nel generated prompt" or "seguendo le istruzioni del workflow" in final meeting-content fields.
 - Domain normalizations may be explained only through textual evidence from the transcript. Correct: "La normalizzazione di Stardus/Stardust come STARDAS è supportata dai riferimenti ripetuti al sistema documentale nella trascrizione." Incorrect: "La normalizzazione è supportata dal domain profile."
 - If an application domain such as SIGE IMU is not explicitly stated in the transcript, do not add it to `analysis.json` as a content interpretation. It may appear only as `selected_domain_profile` in `classification.json`.
@@ -31,22 +32,23 @@ Use this skill when Codex is asked to analyze a transcript in `input/transcripts
 
 1. Read `AGENTS.md`.
 2. Read this skill file.
-3. Select the analysis transcript with the project policy: normalized > reviewed > raw safe.
-4. If the selector decision is `requires_review`, stop and ask for review/manual verification without producing final summary, analysis or classification.
-5. Read the selected transcript from `input/transcripts/`.
-6. Lightly clean the transcript mentally: remove obvious noise, normalize spacing and preserve meaning.
-7. Classify the content with `type` and, when useful, `subtype`.
-8. Select the most suitable recipe from `recipes/`.
-9. If the transcript clearly matches a domain profile, read the relevant file from `domain_profiles/`.
-10. Read `prompt_templates/meta_prompt.md`.
-11. Read `prompt_templates/final_analysis_prompt.md`.
-12. Generate the optimized final prompt for the selected transcript.
-13. Save it as `output/prompts/<name>_generated_prompt.md`.
-14. Apply the generated prompt to the selected transcript.
-15. Save Markdown output to `output/markdown/<name>_summary.md`.
-16. Save JSON analysis to `output/json/<name>_analysis.json`.
-17. Save JSON classification to `output/json/<name>_classification.json`.
-18. Run a final quality check.
+3. For video/audio or unprepared inputs, run Step 6A with `scripts/run_preprocessing_pipeline.py`.
+4. Select the analysis transcript with the project policy: normalized > reviewed > raw safe.
+5. If the pipeline or selector decision is `requires_review`, stop and ask for review/manual verification without producing final summary, analysis or classification.
+6. Read the selected transcript from `input/transcripts/`.
+7. Lightly clean the transcript mentally: remove obvious noise, normalize spacing and preserve meaning.
+8. Classify the content with `type` and, when useful, `subtype`.
+9. Select the most suitable recipe from `recipes/`.
+10. If the transcript clearly matches a domain profile, read the relevant file from `domain_profiles/`.
+11. Read `prompt_templates/meta_prompt.md`.
+12. Read `prompt_templates/final_analysis_prompt.md`.
+13. Generate the optimized final prompt for the selected transcript.
+14. Save it as `output/prompts/<name>_generated_prompt.md`.
+15. Apply the generated prompt to the selected transcript.
+16. Save Markdown output to `output/markdown/<name>_summary.md`.
+17. Save JSON analysis to `output/json/<name>_analysis.json`.
+18. Save JSON classification to `output/json/<name>_classification.json`.
+19. Run a final quality check.
 
 ## Classification
 
