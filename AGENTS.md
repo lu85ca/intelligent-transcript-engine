@@ -52,6 +52,8 @@ Prima dell'analisi agent-driven, selezionare il transcript con la policy `normal
 
 Se esiste solo raw e `safe_for_analysis` e' `false`, `null`, assente o non verificabile, fermarsi e chiedere review/verifica manuale: non produrre summary o analysis finali. I report in `output/review/`, `output/normalization/`, il JSON tecnico di selezione e il frontmatter dei transcript reviewed/normalized sono operational metadata e input preparatori, non fatti del contenuto. I `normalization_candidates` non devono essere applicati automaticamente e la loro promozione resta manuale.
 
+La gestione dei candidati di Step 4 e' separata dalle regole approvate: `knowledge/*/candidates/` contiene suggerimenti da revisionare, non normalizzazioni attive. Gli script di candidate management possono raccogliere, listare, rifiutare o promuovere manualmente candidati; solo una promozione esplicita puo' modificare `approved_terms.yml` o `normalization_rules.yml`. Step 3 non deve leggere o applicare file in `candidates/`.
+
 ## Knowledge incrementale
 
 La conoscenza incrementale vive in `knowledge/` ed e' operational metadata.
@@ -76,6 +78,7 @@ Regole di selezione:
 - per contenuti non-meeting, scegliere una sola macro-categoria se chiara; altrimenti usare `knowledge/macro_categories/generic/`;
 - i candidati vanno salvati nella cartella `candidates/` del contesto selezionato;
 - nessun candidato deve essere promosso automaticamente ad approved term;
+- nessun candidato deve essere applicato automaticamente come regola di normalizzazione;
 - la promozione dei candidati resta manuale.
 
 I file `approved_terms.yml`, `normalization_rules.yml`, `context.md`, `candidates/`, `examples/` e `registry.yml` possono guidare normalizzazione e analisi, ma non devono mai comparire nel summary o in `analysis.json` come contenuto della riunione o del video.

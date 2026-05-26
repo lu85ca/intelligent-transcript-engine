@@ -157,6 +157,48 @@ python3 scripts/normalize_transcript.py "<basename>" --context work_meetings --f
 
 La normalizzazione e' conservativa: applica solo regole `enabled` approvate, non usa `normalization_candidates`, non aggiorna `knowledge/`, non corregge grammatica, non riscrive frasi e non classifica il contenuto. Il normalization report e' operational metadata e non deve essere riportato come contenuto in `summary.md` o `analysis.json`.
 
+## Candidate glossary
+
+Step 4 raccoglie suggerimenti tecnici da report di trascrizione, review e normalizzazione, ma mantiene separati candidati e regole approvate.
+
+Raccogliere candidati:
+
+```bash
+python3 scripts/collect_candidates.py "<basename>" --context work_meetings
+```
+
+Dry run:
+
+```bash
+python3 scripts/collect_candidates.py "<basename>" --context work_meetings --dry-run
+```
+
+Listare candidati:
+
+```bash
+python3 scripts/manage_candidates.py list --context work_meetings
+```
+
+Promuovere manualmente un candidato a regola approvata:
+
+```bash
+python3 scripts/manage_candidates.py promote --context work_meetings --candidate-id <candidate_id> --to normalization_rules
+```
+
+Promuovere manualmente un termine approvato:
+
+```bash
+python3 scripts/manage_candidates.py promote --context work_meetings --candidate-id <candidate_id> --to approved_terms
+```
+
+Rifiutare un candidato:
+
+```bash
+python3 scripts/manage_candidates.py reject --context work_meetings --candidate-id <candidate_id> --notes "Motivo"
+```
+
+I candidate file vivono in `knowledge/<context>/candidates/` o `knowledge/macro_categories/<categoria>/candidates/`. I candidati non vengono applicati da Step 3, non aggiornano automaticamente `approved_terms.yml` o `normalization_rules.yml` e non vengono promossi senza comando esplicito. Candidate file e promotion log sono operational metadata.
+
 ## Selezione transcript per analisi
 
 Prima del workflow agent-driven, usare la policy Step 5 per scegliere il transcript migliore disponibile:
@@ -231,4 +273,4 @@ Output atteso:
 
 ## Stato attuale
 
-Workflow agent-driven documentato. Pipeline locale implementata fino alla selezione del transcript di analisi: raw, review, normalizzazione conservativa e selector Step 5. Nessuna orchestrazione end-to-end o chiamata Codex da script e' implementata.
+Workflow agent-driven documentato. Pipeline locale implementata fino a raw, review, gestione candidati, normalizzazione conservativa e selezione del transcript di analisi. Nessuna orchestrazione end-to-end o chiamata Codex da script e' implementata.

@@ -13,9 +13,10 @@ Use this skill when Codex is asked to analyze a transcript in `input/transcripts
 - Do not turn proposals, hypotheses or orientations into confirmed decisions.
 - Do not include workflow/project instructions in the meeting analysis as if they were meeting content.
 - Processing rules such as no timestamps, anti-hallucination rules, output format rules and missing-data conventions must guide the analysis but must not appear as meeting decisions, meeting facts, hypotheses, orientations or action items.
-- Treat AGENTS.md, this skill, recipes, templates, schemas, domain profiles, generated prompts, technical reports and transcript-selection decisions as operational metadata, not as transcript content.
+- Treat AGENTS.md, this skill, recipes, templates, schemas, domain profiles, generated prompts, technical reports, candidate files, promotion logs and transcript-selection decisions as operational metadata, not as transcript content.
 - The transcript is the only primary source for meeting facts, confirmed decisions, hypotheses, orientations, action items, risks, follow-ups and open questions.
 - Operational metadata must not appear as a source or justification in final content, including `interpretations` and domain normalization explanations.
+- Candidate suggestions are not approved terms or active normalization rules. Do not apply candidates unless they have been manually promoted into approved knowledge files.
 - Do not write phrases such as "supportato dal domain profile", "secondo la recipe", "in base allo schema", "come indicato nel generated prompt" or "seguendo le istruzioni del workflow" in final meeting-content fields.
 - Domain normalizations may be explained only through textual evidence from the transcript. Correct: "La normalizzazione di Stardus/Stardust come STARDAS è supportata dai riferimenti ripetuti al sistema documentale nella trascrizione." Incorrect: "La normalizzazione è supportata dal domain profile."
 - If an application domain such as SIGE IMU is not explicitly stated in the transcript, do not add it to `analysis.json` as a content interpretation. It may appear only as `selected_domain_profile` in `classification.json`.
