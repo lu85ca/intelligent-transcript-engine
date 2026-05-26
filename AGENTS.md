@@ -50,6 +50,8 @@ I file generati dal preprocessing, inclusi frontmatter della trascrizione raw e 
 
 Se esiste una versione in `input/transcripts/reviewed/`, il workflow agent-driven deve preferire quella alla trascrizione raw corrispondente. Se il JSON tecnico di trascrizione indica `safe_for_analysis: false`, non usare direttamente il raw transcript per produrre summary o analysis finali: preparare prima una versione reviewed. I report in `output/review/` e il frontmatter dei transcript reviewed sono operational metadata e input preparatori, non fatti del contenuto.
 
+Se esiste una versione in `input/transcripts/normalized/`, il workflow agent-driven deve preferire quella alla versione reviewed corrispondente. Il normalization report in `output/normalization/` e il frontmatter dei transcript normalized sono operational metadata: tracciano sostituzioni approvate ma non sono fatti, decisioni, interpretazioni o contenuti del video/riunione. I `normalization_candidates` non devono essere applicati automaticamente e la loro promozione resta manuale.
+
 ## Knowledge incrementale
 
 La conoscenza incrementale vive in `knowledge/` ed e' operational metadata.

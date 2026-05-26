@@ -125,7 +125,37 @@ Applicare safe cleanup opzionale su ripetizioni tecniche evidenti:
 python3 scripts/prepare_review_transcript.py input/transcripts/raw/<basename>_raw.md --apply-safe-cleanup
 ```
 
-La normalizzazione automatica non e' ancora implementata. I `normalization_candidates` vengono riportati nel report di review ma non modificano il transcript e non aggiornano `knowledge/`.
+La normalizzazione conservativa e' implementata nello Step 3 e applica solo regole approvate in `normalization_rules.yml`. I `normalization_candidates` vengono riportati nel report di review ma non modificano il transcript, non aggiornano `knowledge/` e non vengono promossi automaticamente.
+
+## Normalized transcripts
+
+Step 3 parte da un transcript reviewed e produce una versione normalizzata usando solo regole approvate in `knowledge/*/normalization_rules.yml`.
+
+Input e output:
+
+- input: `input/transcripts/reviewed/<basename>_reviewed.md`
+- output: `input/transcripts/normalized/<basename>_normalized.md`
+- report tecnico: `output/normalization/<basename>_normalization.json`
+
+Esempio:
+
+```bash
+python3 scripts/normalize_transcript.py "<basename>" --context work_meetings
+```
+
+Dry run senza scrivere file:
+
+```bash
+python3 scripts/normalize_transcript.py "<basename>" --context work_meetings --dry-run
+```
+
+Rigenerare output esistenti:
+
+```bash
+python3 scripts/normalize_transcript.py "<basename>" --context work_meetings --force
+```
+
+La normalizzazione e' conservativa: applica solo regole `enabled` approvate, non usa `normalization_candidates`, non aggiorna `knowledge/`, non corregge grammatica, non riscrive frasi e non classifica il contenuto. Il normalization report e' operational metadata e non deve essere riportato come contenuto in `summary.md` o `analysis.json`.
 
 ## Flusso agent-driven
 
