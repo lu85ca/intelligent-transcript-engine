@@ -1,176 +1,592 @@
 # Intelligent Transcript Engine
 
-`intelligent-transcript-engine` e' un progetto agent-driven per analizzare file di trascrizione testuale, con una futura pipeline locale di preprocessing video/audio.
+`intelligent-transcript-engine` trasforma video, audio o trascrizioni in output strutturati:
 
-L'obiettivo e' far lavorare Codex come agente: leggere regole, skill, recipe, template e trascrizione, classificare il contenuto, generare un prompt ottimizzato e produrre output Markdown e JSON.
-
-Il progetto non usa piu' uno script Python come pipeline principale. Codex/AI e' responsabile di classificare, scegliere la recipe, generare il prompt, applicarlo e salvare gli output.
-
-Il preprocessing video/audio, quando implementato, deve restare locale e script-driven: estrazione audio, trascrizione con MLX Whisper large-v3-turbo, normalizzazione conservativa e log tecnici. Gli script di preprocessing non devono analizzare semanticamente il contenuto e non devono invocare Codex.
-
-## Struttura
-
-- `AGENTS.md`: regole operative per Codex e per gli agenti che lavorano sul progetto.
-- `input/transcripts/`: trascrizioni sorgenti da analizzare.
-- `input/videos/`: video sorgenti per la pipeline raw video/audio.
-- `input/audio/`: audio WAV estratto dai video.
-- `input/transcripts/raw/`: trascrizioni grezze prodotte da MLX Whisper.
-- `output/markdown/`: risultati leggibili in Markdown.
-- `output/json/`: risultati strutturati in JSON.
-- `output/prompts/`: prompt generati per debug e riproducibilita'.
-- `output/preprocessing/`: log tecnici di estrazione audio.
-- `output/transcription/`: log tecnici di trascrizione raw.
-- `prompt_templates/`: template per generare e applicare prompt di analisi.
-- `recipes/`: istruzioni di analisi per tipo di contenuto.
-- `schemas/`: schemi JSON per classificazione e output.
-- `knowledge/`: contesti incrementali, glossari, regole conservative, candidati ed esempi.
-- `examples/`: esempi e materiale dimostrativo.
-- `.agents/skills/transcript-intelligence/`: skill locale dedicata alla transcript intelligence.
-
-## Knowledge context
-
-La knowledge incrementale e' operational metadata: puo' guidare normalizzazione e analisi, ma non deve comparire come contenuto negli output finali.
-
-- `knowledge/global/`: termini e regole davvero trasversali.
-- `knowledge/work_meetings/`: unico contesto per tutte le riunioni di lavoro, incluse IMU, TARI, SIGE, flussi documentali, database, rilasci e riunioni tecnico/funzionali generiche.
-- `knowledge/macro_categories/finance/`: contenuti non-meeting di finanza.
-- `knowledge/macro_categories/travel/`: contenuti non-meeting di viaggio.
-- `knowledge/macro_categories/social_media_management/`: contenuti non-meeting di social media management.
-- `knowledge/macro_categories/generic/`: fallback per contenuti non-meeting.
-- `knowledge/registry.yml`: regole di selezione dei contesti.
-
-I candidati vanno nella cartella `candidates/` del contesto selezionato e non vengono mai promossi automaticamente.
-
-## Pipeline raw video/audio
-
-Step 1 prepara trascrizioni grezze da video locali. Non invoca Codex, non classifica, non normalizza e non produce summary o JSON di analisi.
-
-Dipendenze richieste:
-
-```bash
-brew install ffmpeg
-python3 -m venv .venv
-source .venv/bin/activate
-pip install mlx-whisper
+```text
+output/prompts/<nome>_generated_prompt.md
+output/markdown/<nome>_summary.md
+output/json/<nome>_classification.json
+output/json/<nome>_analysis.json
 ```
 
-Nota: nell'ambiente corrente `ffmpeg` e' disponibile, mentre `mlx_whisper` deve essere installato nel venv prima della trascrizione.
+Il progetto separa due parti:
 
-Uso:
+```text
+preprocessing deterministico
+-> trascrizione, review, normalizzazione, candidati dizionario
 
-```bash
-cp "/path/al/video.mp4" input/videos/
-scripts/process_videos.sh
+workflow agent-driven
+-> classificazione, recipe, generated prompt, summary, analysis JSON
 ```
 
-Rigenerare sovrascrivendo output esistenti:
+Gli script preparano e controllano il materiale. Codex interpreta il contenuto e genera il riassunto strutturato.
 
-```bash
-scripts/process_videos.sh --force
+## Uso Normale
+
+1. Metti un video in `input/videos/` oppure un audio WAV in `input/audio/`.
+2. Chiedi a Codex: `Riassumi questo video usando il workflow del progetto`.
+3. Codex esegue la pipeline locale deterministica.
+4. Codex usa il transcript selezionato dalla pipeline.
+5. Codex genera `generated_prompt.md`, `summary.md`, `classification.json` e `analysis.json`.
+6. Il sistema raccoglie eventuali candidati dizionario da rivedere in futuro.
+
+Prompt consigliato:
+
+```text
+Ho inserito un video in input/videos. Riassumi l'ultimo video usando il workflow del progetto. Esegui prima la pipeline di preprocessing, usa solo il selected_transcript se ready_for_agent_analysis e' true, poi genera summary.md, classification.json e analysis.json. Segnalami eventuali candidati dizionario senza promuoverli automaticamente.
 ```
 
-Senza `--force`, una trascrizione raw gia' esistente non viene ritrascritta e un eventuale report tecnico gia' presente viene mantenuto. Con `--force`, trascrizione e report tecnico vengono rigenerati completamente.
+Per un file specifico:
 
-Test con un singolo video/audio:
-
-```bash
-cp "/path/al/video.mp4" input/videos/
-scripts/prepare_video_inputs.sh
-source .venv/bin/activate
-python3 scripts/transcribe_audio_mlx.py input/audio/<basename>.wav
+```text
+Riassumi il video "nome-file.mkv" usando il workflow del progetto. Esegui la pipeline di preprocessing, usa il selected_transcript e genera gli output strutturati. Non trattare report tecnici, candidate glossary o frontmatter come contenuto del video.
 ```
 
-Output prodotti:
+## Struttura Principale
 
-- `input/audio/<basename>.wav`
-- `input/transcripts/raw/<basename>_raw.md`
-- `output/preprocessing/<basename>_preprocessing.json`
-- `output/transcription/<basename>_transcription.json`
+```text
+input/videos/                 video sorgenti
+input/audio/                  audio estratti o audio sorgenti
 
-I metadati frontmatter delle trascrizioni raw e i log JSON tecnici sono operational metadata: servono per tracciabilita' e debug, non come contenuto da riportare negli output finali.
+input/transcripts/raw/         trascrizioni grezze
+input/transcripts/reviewed/    trascrizioni revisionate/preparate
+input/transcripts/normalized/  trascrizioni normalizzate
 
-Per webinar lunghi o audio rumorosi, il JSON tecnico in `output/transcription/` puo' includere:
+output/preprocessing/          report tecnici di estrazione audio
+output/transcription/          report tecnici di trascrizione
+output/review/                 report di review
+output/normalization/          report di normalizzazione
+output/pipeline/               report della pipeline completa
 
-- `quality_warnings`: warning tecnici su possibili loop, ripetizioni iniziali/finali o altri segnali di trascrizione sporca.
-- `normalization_candidates`: possibili termini sospetti da rivedere manualmente, senza sostituzione automatica.
-- `safe_for_analysis`: `false` quando la trascrizione raw dovrebbe essere revisionata prima di lanciare il workflow agent-driven.
+output/prompts/                generated prompt interni/debug
+output/markdown/               summary leggibili
+output/json/                   classification e analysis JSON
 
-Questi campi non sono analisi del contenuto e non devono essere riportati in `summary.md` o `analysis.json`. Le correzioni automatiche e la normalizzazione saranno gestite in uno step successivo.
-
-Controllo manuale per verificare che un report tecnico ricco non venga svuotato da una run senza `--force`:
-
-```bash
-python3 scripts/transcribe_audio_mlx.py input/audio/<basename>.wav
+knowledge/global/              regole davvero trasversali
+knowledge/work_meetings/       knowledge per tutte le riunioni di lavoro
+knowledge/macro_categories/    knowledge per contenuti non-meeting
 ```
 
-## Reviewed transcripts
+## Pipeline
 
-Quando `output/transcription/<basename>_transcription.json` contiene `safe_for_analysis: false`, il raw transcript non dovrebbe essere usato direttamente dal workflow agent-driven. Preparare prima una versione reviewed in `input/transcripts/reviewed/`.
+Quando chiedi a Codex di riassumere un video/audio, il progetto segue questo flusso:
 
-Differenza:
-
-- `input/transcripts/raw/`: output grezzo di MLX Whisper, invariato.
-- `input/transcripts/reviewed/`: copia revisionabile con frontmatter aggiornato ed eventuale safe cleanup tecnico.
-- `output/review/`: report tecnico della review.
-
-Creare un reviewed draft conservativo, senza rimuovere o correggere testo:
-
-```bash
-python3 scripts/prepare_review_transcript.py input/transcripts/raw/<basename>_raw.md
+```text
+video/audio
+-> audio estratto
+-> raw transcript
+-> quality report
+-> reviewed transcript
+-> normalized transcript
+-> candidate glossary
+-> selected transcript
+-> workflow agent-driven
+-> generated_prompt.md
+-> summary.md
+-> classification.json
+-> analysis.json
 ```
 
-Applicare safe cleanup opzionale su ripetizioni tecniche evidenti:
+Il runner principale del preprocessing e':
 
 ```bash
-python3 scripts/prepare_review_transcript.py input/transcripts/raw/<basename>_raw.md --apply-safe-cleanup
+python3 scripts/run_preprocessing_pipeline.py
 ```
 
-La normalizzazione conservativa e' implementata nello Step 3 e applica solo regole approvate in `normalization_rules.yml`. I `normalization_candidates` vengono riportati nel report di review ma non modificano il transcript, non aggiornano `knowledge/` e non vengono promossi automaticamente.
+Coordina gli step deterministici:
 
-## Normalized transcripts
+```text
+Step 1: video/audio -> raw transcript + quality report
+Step 2: raw transcript -> reviewed transcript + review report
+Step 3: reviewed transcript -> normalized transcript + normalization report
+Step 4: raccolta candidati dizionario
+Step 5: selezione del transcript migliore
+Step 6A: report operativo della pipeline
+Step 6B: Codex usa il selected_transcript nel workflow agent-driven
+```
 
-Step 3 parte da un transcript reviewed e produce una versione normalizzata usando solo regole approvate in `knowledge/*/normalization_rules.yml`.
+Gli script non invocano Codex CLI e non generano summary/classification/analysis. Questi output finali vengono generati solo dal workflow agent-driven di Codex.
 
-Input e output:
+## Riassumere un video con Codex
 
-- input: `input/transcripts/reviewed/<basename>_reviewed.md`
-- output: `input/transcripts/normalized/<basename>_normalized.md`
-- report tecnico: `output/normalization/<basename>_normalization.json`
+Metti il video in:
+
+```bash
+input/videos/
+```
 
 Esempio:
 
 ```bash
-python3 scripts/normalize_transcript.py "<basename>" --context work_meetings
+input/videos/corso-ai.mkv
 ```
 
-Dry run senza scrivere file:
+Poi chiedi a Codex:
 
-```bash
-python3 scripts/normalize_transcript.py "<basename>" --context work_meetings --dry-run
+```text
+Riassumi l'ultimo video in input/videos usando il workflow del progetto.
 ```
 
-Rigenerare output esistenti:
+Codex deve eseguire:
 
 ```bash
-python3 scripts/normalize_transcript.py "<basename>" --context work_meetings --force
+python3 scripts/run_preprocessing_pipeline.py --latest-video --context work_meetings --json
 ```
 
-La normalizzazione e' conservativa: applica solo regole `enabled` approvate, non usa `normalization_candidates`, non aggiorna `knowledge/`, non corregge grammatica, non riscrive frasi e non classifica il contenuto. Il normalization report e' operational metadata e non deve essere riportato come contenuto in `summary.md` o `analysis.json`.
+Se il report contiene `ready_for_agent_analysis: true`, Codex usa `selected_transcript` e genera gli output finali.
 
-## Candidate glossary
+## Riassumere Un Audio
 
-Step 4 raccoglie suggerimenti tecnici da report di trascrizione, review e normalizzazione, ma mantiene separati candidati e regole approvate.
-
-Raccogliere candidati:
+Metti l'audio WAV in:
 
 ```bash
-python3 scripts/collect_candidates.py "<basename>" --context work_meetings
+input/audio/
+```
+
+Poi chiedi a Codex:
+
+```text
+Ho inserito un audio in input/audio. Riassumilo usando il workflow del progetto.
+```
+
+Se vuoi lanciare il runner manualmente su un audio specifico:
+
+```bash
+python3 scripts/run_preprocessing_pipeline.py "input/audio/nome-audio.wav" --context work_meetings --json
+```
+
+## Runner Preprocessing
+
+Da basename:
+
+```bash
+python3 scripts/run_preprocessing_pipeline.py "NOME_BASE" --context work_meetings --json
+```
+
+Da video:
+
+```bash
+python3 scripts/run_preprocessing_pipeline.py "input/videos/video.mkv" --context work_meetings --json
+```
+
+Ultimo video caricato:
+
+```bash
+python3 scripts/run_preprocessing_pipeline.py --latest-video --context work_meetings --json
 ```
 
 Dry run:
 
 ```bash
-python3 scripts/collect_candidates.py "<basename>" --context work_meetings --dry-run
+python3 scripts/run_preprocessing_pipeline.py --latest-video --context work_meetings --dry-run --json
+```
+
+Output importante:
+
+```json
+{
+  "pipeline_status": "ready_for_agent_analysis",
+  "ready_for_agent_analysis": true,
+  "selected_transcript": "input/transcripts/normalized/...",
+  "selected_level": "normalized",
+  "candidate_count": 3
+}
+```
+
+Se `ready_for_agent_analysis` e' `true`, Codex puo' generare il riassunto.
+
+Se e' `false`, Codex deve fermarsi, spiegare il motivo operativo e indicare cosa revisionare.
+
+## Transcript Usato Per Il Summary
+
+Il sistema sceglie automaticamente il miglior transcript disponibile:
+
+```text
+1. input/transcripts/normalized/<basename>_normalized.md
+2. input/transcripts/reviewed/<basename>_reviewed.md
+3. input/transcripts/raw/<basename>_raw.md solo se safe_for_analysis = true
+```
+
+Non analizzare direttamente il raw se esiste un transcript migliore.
+
+Per verificare la selezione:
+
+```bash
+python3 scripts/select_analysis_transcript.py "NOME_BASE" --json
+```
+
+## Quando La Pipeline Si Ferma
+
+La pipeline puo' fermarsi se:
+
+```text
+- il raw transcript e' tecnicamente sporco;
+- safe_for_analysis e' false;
+- manca un report tecnico;
+- manca un transcript necessario;
+- la review manuale e' richiesta;
+- il selected transcript non esiste.
+```
+
+In questi casi Codex non deve generare il summary finale, `classification.json` o `analysis.json`.
+
+## Output Finali
+
+Il workflow agent-driven produce:
+
+```text
+output/prompts/<nome>_generated_prompt.md
+output/markdown/<nome>_summary.md
+output/json/<nome>_classification.json
+output/json/<nome>_analysis.json
+```
+
+Significato:
+
+```text
+generated_prompt.md       artefatto interno/debug
+summary.md                riassunto leggibile e strutturato
+classification.json       classificazione type/subtype/recipe/context
+analysis.json             analisi strutturata in JSON
+```
+
+Il file principale da leggere e':
+
+```text
+output/markdown/<nome>_summary.md
+```
+
+## Regole Per Un Summary Pulito
+
+Il summary deve basarsi solo sul transcript selezionato.
+
+Non deve trattare come contenuto del video:
+
+```text
+quality_warnings
+normalization_candidates
+review report
+normalization report
+pipeline report
+candidate files
+frontmatter tecnico
+log tecnici
+regole del progetto
+```
+
+Questi sono operational metadata.
+
+Il summary deve:
+
+```text
+- non inventare;
+- non inserire minutaggi;
+- distinguere decisioni confermate, ipotesi, proposte e punti aperti;
+- usare "non specificato nella trascrizione" quando un dato manca;
+- usare "da confermare" quando qualcosa e' ambiguo;
+- considerare decisione confermata solo cio' che e' esplicito nel transcript.
+```
+
+## Context Knowledge
+
+Il parametro `--context` decide quale knowledge base usare.
+
+Default consigliato per riunioni/call/progetti di lavoro:
+
+```bash
+--context work_meetings
+```
+
+Da usare per:
+
+```text
+riunioni tecniche
+call di progetto
+flussi applicativi
+riunioni operative
+discussioni IMU/TARI/SIGE
+```
+
+Contenuti finance:
+
+```bash
+--context macro_categories/finance
+```
+
+Contenuti travel:
+
+```bash
+--context macro_categories/travel
+```
+
+Contenuti social media management:
+
+```bash
+--context macro_categories/social_media_management
+```
+
+Contenuti generici non-meeting:
+
+```bash
+--context macro_categories/generic
+```
+
+Non creare sottocategorie granulari. Una riunione TARI e una riunione IMU vanno entrambe in:
+
+```text
+knowledge/work_meetings/
+```
+
+`knowledge/global/` contiene solo termini e regole davvero trasversali.
+
+## Gestione Parole Da Correggere
+
+Il progetto distingue tre livelli:
+
+```text
+candidate
+approved term
+normalization rule
+```
+
+### Candidate
+
+Un candidate e' un suggerimento.
+
+Esempio:
+
+```text
+Copario Chat -> Copilot Chat
+```
+
+Non viene applicato automaticamente.
+
+I candidate stanno in:
+
+```text
+knowledge/work_meetings/candidates/
+knowledge/macro_categories/<categoria>/candidates/
+```
+
+### Approved Term
+
+Un approved term e' un termine canonico approvato.
+
+File:
+
+```text
+knowledge/<context>/approved_terms.yml
+```
+
+Serve come glossario.
+
+### Normalization Rule
+
+Una normalization rule e' una regola approvata che viene applicata automaticamente alla trascrizione normalizzata.
+
+File:
+
+```text
+knowledge/<context>/normalization_rules.yml
+```
+
+Esempio:
+
+```yaml
+rules:
+  - id: copilot_chat_from_copario_chat
+    enabled: true
+    observed:
+      - "Copario Chat"
+    canonical: "Copilot Chat"
+    match: "phrase"
+    case_sensitive: false
+```
+
+Solo le regole in `normalization_rules.yml` vengono applicate automaticamente.
+
+## Candidati: Comandi
+
+La pipeline Step 6A raccoglie gia' i candidati automaticamente.
+
+Raccogliere manualmente:
+
+```bash
+python3 scripts/manage_candidates.py collect "NOME_BASE" --context work_meetings --json
+```
+
+Dry run:
+
+```bash
+python3 scripts/manage_candidates.py collect "NOME_BASE" --context work_meetings --dry-run --json
+```
+
+Listare:
+
+```bash
+python3 scripts/manage_candidates.py list --context work_meetings
+```
+
+Listare in JSON:
+
+```bash
+python3 scripts/manage_candidates.py list --context work_meetings --json
+```
+
+Promuovere a regola di normalizzazione:
+
+```bash
+python3 scripts/manage_candidates.py promote \
+  --context work_meetings \
+  --candidate-id cand_xxxxx \
+  --to normalization_rules
+```
+
+Promuovere ad approved term:
+
+```bash
+python3 scripts/manage_candidates.py promote \
+  --context work_meetings \
+  --candidate-id cand_xxxxx \
+  --to approved_terms
+```
+
+Rifiutare:
+
+```bash
+python3 scripts/manage_candidates.py reject \
+  --context work_meetings \
+  --candidate-id cand_xxxxx \
+  --notes "Motivo del rifiuto"
+```
+
+Regola fondamentale:
+
+```text
+candidate != approved
+```
+
+I candidati non vengono promossi automaticamente: il sistema non promuove nulla automaticamente.
+
+## Applicare Una Nuova Regola Al Video Corrente
+
+Se promuovi un candidato dopo aver gia' generato il normalized transcript, devi rigenerare la normalizzazione:
+
+```bash
+python3 scripts/normalize_transcript.py "NOME_BASE" --context work_meetings --force
+```
+
+Poi rilancia il runner:
+
+```bash
+python3 scripts/run_preprocessing_pipeline.py "NOME_BASE" --context work_meetings --json
+```
+
+Infine chiedi a Codex:
+
+```text
+Ho aggiornato le regole di normalizzazione. Rigenera il summary usando il workflow del progetto e il transcript selezionato dalla pipeline.
+```
+
+## Flusso Consigliato Per Migliorare La Base Parole
+
+Dopo ogni video:
+
+```text
+1. genera il summary normalmente;
+2. guarda i candidati raccolti;
+3. promuovi solo quelli sicuri;
+4. rifiuta quelli sbagliati;
+5. lascia in candidate quelli dubbi;
+6. rigenera la normalizzazione solo se vuoi aggiornare anche il video corrente.
+```
+
+Le nuove regole approvate verranno usate nelle normalizzazioni successive.
+
+## Esempio: Video Di Una Riunione
+
+1. Copia il video:
+
+```bash
+cp "/percorso/video-riunione.mkv" input/videos/
+```
+
+2. Chiedi a Codex:
+
+```text
+Riassumi l'ultimo video in input/videos usando il workflow del progetto.
+```
+
+Codex deve:
+
+```text
+- eseguire run_preprocessing_pipeline.py;
+- usare selected_transcript;
+- generare generated_prompt.md;
+- generare summary.md;
+- generare classification.json;
+- generare analysis.json;
+- segnalare eventuali candidati dizionario senza promuoverli.
+```
+
+## Esempio: Video Finance
+
+1. Copia il video:
+
+```bash
+cp "/percorso/video-finanza.mp4" input/videos/
+```
+
+2. Chiedi a Codex:
+
+```text
+Riassumi l'ultimo video in input/videos. E' un contenuto finance, quindi usa il context macro_categories/finance.
+```
+
+Codex usera':
+
+```bash
+python3 scripts/run_preprocessing_pipeline.py --latest-video --context macro_categories/finance --json
+```
+
+Poi generera' il summary strutturato.
+
+## Comandi Utili
+
+Runner completo:
+
+```bash
+python3 scripts/run_preprocessing_pipeline.py "NOME_BASE" --context work_meetings --json
+```
+
+Dry run:
+
+```bash
+python3 scripts/run_preprocessing_pipeline.py "NOME_BASE" --context work_meetings --dry-run --json
+```
+
+Ultimo video:
+
+```bash
+python3 scripts/run_preprocessing_pipeline.py --latest-video --context work_meetings --json
+```
+
+Selezionare transcript:
+
+```bash
+python3 scripts/select_analysis_transcript.py "NOME_BASE" --json
+```
+
+Normalizzare:
+
+```bash
+python3 scripts/normalize_transcript.py "NOME_BASE" --context work_meetings
+```
+
+Raccogliere candidati:
+
+```bash
+python3 scripts/manage_candidates.py collect "NOME_BASE" --context work_meetings --json
 ```
 
 Listare candidati:
@@ -179,160 +595,38 @@ Listare candidati:
 python3 scripts/manage_candidates.py list --context work_meetings
 ```
 
-Promuovere manualmente un candidato a regola approvata:
+## Checklist Veloce
 
-```bash
-python3 scripts/manage_candidates.py promote --context work_meetings --candidate-id <candidate_id> --to normalization_rules
+```text
+[ ] Metto video/audio in input/videos/ o input/audio/
+[ ] Chiedo a Codex: "Riassumi questo video"
+[ ] Codex esegue run_preprocessing_pipeline.py
+[ ] La pipeline restituisce ready_for_agent_analysis = true
+[ ] Codex usa selected_transcript
+[ ] Codex genera generated_prompt.md, summary.md, classification.json, analysis.json
+[ ] Controllo eventuali candidati dizionario
+[ ] Promuovo solo correzioni sicure
 ```
 
-Promuovere manualmente un termine approvato:
+## Regole Importanti
 
-```bash
-python3 scripts/manage_candidates.py promote --context work_meetings --candidate-id <candidate_id> --to approved_terms
+- Non chiedere a Codex di analizzare direttamente `input/transcripts/raw/...`.
+- Usare sempre il transcript selezionato dalla pipeline.
+- Non promuovere automaticamente i candidati.
+- Non mettere metadata tecnici nel summary.
+- Non usare `knowledge/global/` per tutto.
+- Le riunioni di lavoro usano `knowledge/work_meetings/`.
+
+## Stato Attuale
+
+Pipeline locale implementata fino a Step 6B:
+
+```text
+video/audio
+-> preprocessing deterministico
+-> selected_transcript
+-> workflow agent-driven Codex
+-> generated_prompt.md / summary.md / classification.json / analysis.json
 ```
 
-Rifiutare un candidato:
-
-```bash
-python3 scripts/manage_candidates.py reject --context work_meetings --candidate-id <candidate_id> --notes "Motivo"
-```
-
-I candidate file vivono in `knowledge/<context>/candidates/` o `knowledge/macro_categories/<categoria>/candidates/`. I candidati non vengono applicati da Step 3, non aggiornano automaticamente `approved_terms.yml` o `normalization_rules.yml` e non vengono promossi senza comando esplicito. Candidate file e promotion log sono operational metadata.
-
-## Selezione transcript per analisi
-
-Prima del workflow agent-driven, usare la policy Step 5 per scegliere il transcript migliore disponibile:
-
-1. `input/transcripts/normalized/<basename>_normalized.md`
-2. `input/transcripts/reviewed/<basename>_reviewed.md`
-3. `input/transcripts/raw/<basename>_raw.md`, solo se `output/transcription/<basename>_transcription.json` contiene `safe_for_analysis: true`
-
-Comando:
-
-```bash
-python3 scripts/select_analysis_transcript.py "<basename>"
-```
-
-Output JSON tecnico:
-
-```bash
-python3 scripts/select_analysis_transcript.py "<basename>" --json
-```
-
-Se la policy restituisce `requires_review`, il raw transcript non deve essere analizzato direttamente: creare o verificare prima una versione reviewed. Il JSON di selezione, i quality warning, i candidati e i report tecnici sono operational metadata, non contenuto da riportare negli output finali.
-
-## Runner preprocessing
-
-Step 6A coordina gli step deterministici gia' validati e produce un report operativo in `output/pipeline/`. Non invoca Codex, non classifica e non genera summary, prompt o analysis.
-
-Da basename:
-
-```bash
-python3 scripts/run_preprocessing_pipeline.py "<basename>" --context work_meetings
-```
-
-Da video in `input/videos/` o audio WAV in `input/audio/`:
-
-```bash
-python3 scripts/run_preprocessing_pipeline.py "input/videos/video.mkv" --context work_meetings
-```
-
-Ultimo video caricato:
-
-```bash
-python3 scripts/run_preprocessing_pipeline.py --latest-video --context work_meetings
-```
-
-Dry run JSON:
-
-```bash
-python3 scripts/run_preprocessing_pipeline.py "<basename>" --context work_meetings --dry-run --json
-```
-
-Il runner esegue o salta in modo idempotente: trascrizione raw, review, normalizzazione, raccolta candidati e selezione transcript. Se il report finale contiene `ready_for_agent_analysis: true`, usare `selected_transcript` come unico contenuto per il workflow agent-driven. Se contiene `requires_manual_review: true`, fermarsi e revisionare prima di generare il summary finale.
-
-## Riassumere un video con Codex
-
-Per richieste del tipo "riassumi questo video", "ho messo un video in input/videos" o "analizza l'ultimo video", Codex deve usare Step 6A come ingresso standard.
-
-Flusso:
-
-1. Eseguire `scripts/run_preprocessing_pipeline.py` sul file indicato, sul basename o con `--latest-video`.
-2. Leggere il JSON del pipeline report.
-3. Se `ready_for_agent_analysis` e' `false`, fermarsi e indicare cosa revisionare.
-4. Se `ready_for_agent_analysis` e' `true`, usare solo `selected_transcript` come contenuto da analizzare.
-5. Applicare il workflow transcript-intelligence e produrre:
-   - `output/prompts/<nome>_generated_prompt.md`
-   - `output/markdown/<nome>_summary.md`
-   - `output/json/<nome>_classification.json`
-   - `output/json/<nome>_analysis.json`
-
-Esempio operativo per ultimo video:
-
-```bash
-python3 scripts/run_preprocessing_pipeline.py --latest-video --context work_meetings --json
-```
-
-Se il report indica candidati, Codex puo' segnalarli in una nota operativa separata dal summary:
-
-```bash
-python3 scripts/manage_candidates.py list --context work_meetings
-```
-
-I candidati non vengono promossi automaticamente e non sono contenuto del video. Anche pipeline report, quality warnings, review report, normalization report, candidate file, log tecnici e frontmatter restano operational metadata.
-
-## Flusso agent-driven
-
-1. Inserire o preparare una trascrizione in `input/transcripts/`.
-2. Codex legge `AGENTS.md`.
-3. Codex usa `.agents/skills/transcript-intelligence/SKILL.md`.
-4. Per video/audio o input non ancora preparati, Codex esegue Step 6A con `scripts/run_preprocessing_pipeline.py`.
-5. Codex seleziona il transcript di analisi dal report Step 6A o con `scripts/select_analysis_transcript.py`.
-6. Se la policy richiede review, Codex si ferma e non produce summary finale.
-7. Codex classifica la trascrizione selezionata.
-8. Codex sceglie la recipe piu' adatta da `recipes/`.
-9. Codex seleziona i knowledge context tramite `knowledge/registry.yml`.
-10. Codex usa i template in `prompt_templates/` per generare un prompt ottimizzato.
-11. Codex salva il prompt in `output/prompts/<nome>_generated_prompt.md`.
-12. Codex applica il prompt alla trascrizione selezionata.
-13. Codex salva:
-   - `output/json/<nome>_classification.json`
-   - `output/json/<nome>_analysis.json`
-   - `output/markdown/<nome>_summary.md`
-14. Se `candidate_count > 0`, Codex segnala i candidati in una nota operativa separata dagli output finali e non promuove nulla automaticamente.
-
-## Metodo
-
-La classificazione guida la strategia di analisi. Quando il tipo di contenuto e' ambiguo, il sistema deve indicare un `secondary_type`, abbassare la `confidence` e usare la recipe `generic` se non ci sono segnali sufficienti.
-
-Le informazioni assenti devono essere marcate come `non rilevato`. Le interpretazioni devono restare separate dai fatti espliciti.
-
-Regole obbligatorie:
-
-- non inserire minutaggi nell'output;
-- non inventare informazioni;
-- classificare sempre prima di analizzare;
-- salvare sempre il prompt generato;
-- produrre sempre Markdown e JSON;
-- non trattare i file in `knowledge/` come contenuto della trascrizione;
-- non promuovere automaticamente candidati ad approved term;
-- non aggiungere dipendenze o API esterne; gli script di preprocessing non devono invocare Codex; eventuali script di orchestrazione del workflow che invocano Codex CLI devono essere introdotti solo in uno step dedicato e richiesto esplicitamente.
-
-## How to use with Codex CLI
-
-Esempio pratico:
-
-```bash
-codex "Analizza input/transcripts/example.md seguendo AGENTS.md, la skill transcript-intelligence, le recipe, gli schema e i prompt template. Genera output/prompts/example_generated_prompt.md, output/json/example_classification.json, output/json/example_analysis.json e output/markdown/example_summary.md."
-```
-
-Output atteso:
-
-- `output/prompts/example_generated_prompt.md`
-- `output/json/example_classification.json`
-- `output/json/example_analysis.json`
-- `output/markdown/example_summary.md`
-
-## Stato attuale
-
-Workflow agent-driven documentato. Pipeline locale implementata fino all'integrazione Step 6B: Codex usa Step 6A per preparare video/audio, poi analizza `selected_transcript` con il workflow agent-driven. Nessuno script deterministico invoca Codex CLI.
+Nessuno script deterministico invoca Codex CLI. I candidati restano suggerimenti finche' non vengono promossi manualmente.
