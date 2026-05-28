@@ -56,6 +56,10 @@ La gestione dei candidati di Step 4 e' separata dalle regole approvate: `knowled
 
 Quando l'utente chiede di riassumere un video/audio o un contenuto non ancora preparato, eseguire prima Step 6A con `scripts/run_preprocessing_pipeline.py`. Se il pipeline report contiene `ready_for_agent_analysis: true`, usare solo `selected_transcript` come contenuto sorgente dell'analisi agent-driven. Se contiene `requires_manual_review: true` o `pipeline_status: failed`, fermarsi e spiegare l'azione richiesta senza generare summary, classification o analysis. Il pipeline report e' operational metadata.
 
+Per richieste generiche come "ho messo un video in input/videos" o "analizza l'ultimo video", usare `--latest-video` se la richiesta non indica un file specifico. Se ci sono più input plausibili e scegliere l'ultimo non e' ragionevole dal contesto, chiedere quale file usare. Il context default e' `work_meetings`; usare macro-categorie solo quando l'utente le indica o il contenuto e' chiaramente non-meeting.
+
+Dopo una pipeline pronta, generare gli output finali solo nella fase agent-driven e solo dalla trascrizione selezionata: `output/prompts/<nome>_generated_prompt.md`, `output/markdown/<nome>_summary.md`, `output/json/<nome>_classification.json` e `output/json/<nome>_analysis.json`. Se `candidate_count > 0`, segnalare i candidati solo come nota operativa separata, indicando eventualmente `python3 scripts/manage_candidates.py list --context <context>`. Non inserire candidati o report tecnici nel summary come contenuto del video/riunione.
+
 ## Knowledge incrementale
 
 La conoscenza incrementale vive in `knowledge/` ed e' operational metadata.
@@ -136,24 +140,26 @@ Per ogni trascrizione in `input/transcripts/`, Codex deve:
 
 1. Leggere questo file `AGENTS.md`.
 2. Usare la skill `.agents/skills/transcript-intelligence/SKILL.md`.
-3. Per video/audio o input non ancora preparati, eseguire Step 6A e leggere il pipeline report.
-4. Selezionare il transcript da analizzare con priorita' `normalized > reviewed > raw safe`, usando `selected_transcript` del pipeline report quando disponibile.
-5. Se la policy restituisce `requires_review`, fermarsi e chiedere review/verifica manuale senza produrre output finali.
-6. Leggere la trascrizione selezionata.
-7. Classificare il tipo di contenuto con `type`, `subtype`, `confidence`, `secondary_type`, `selected_recipe`, `selected_domain_profile`, `signals` e `reason`.
-8. Scegliere la recipe piu' adatta da `recipes/`.
-9. Selezionare il knowledge context seguendo `knowledge/registry.yml`.
-10. Per riunioni di lavoro, usare sempre `knowledge/global/` e `knowledge/work_meetings/`.
-11. Per contenuti non-meeting, usare `knowledge/global/` e una macro-categoria in `knowledge/macro_categories/`, oppure `generic` come fallback.
-12. Se strettamente pertinente e gia' previsto dal progetto, scegliere un domain profile da `domain_profiles/` e dichiararlo nella classification; non creare nuovi domain profile granulari.
-13. Leggere `prompt_templates/meta_prompt.md` e `prompt_templates/final_analysis_prompt.md`.
-14. Generare un prompt ottimizzato per la trascrizione selezionata.
-15. Salvare il prompt in `output/prompts/<nome>_generated_prompt.md`.
-16. Applicare il prompt alla trascrizione selezionata.
-17. Salvare la classificazione in `output/json/<nome>_classification.json`.
-18. Salvare l'analisi strutturata in `output/json/<nome>_analysis.json`.
-19. Salvare il riepilogo leggibile in `output/markdown/<nome>_summary.md`.
-20. Fare un controllo qualita' finale su completezza, tracciabilita', assenza di invenzioni e rispetto degli schemi.
+3. Per video/audio o input non ancora preparati, eseguire Step 6A con `scripts/run_preprocessing_pipeline.py` e leggere il pipeline report.
+4. Se `ready_for_agent_analysis` e' `false`, fermarsi e chiedere review/verifica manuale senza produrre output finali.
+5. Selezionare il transcript da analizzare con priorita' `normalized > reviewed > raw safe`, usando `selected_transcript` del pipeline report quando disponibile.
+6. Se la policy restituisce `requires_review`, fermarsi e chiedere review/verifica manuale senza produrre output finali.
+7. Leggere solo la trascrizione selezionata come contenuto sorgente.
+8. Classificare il tipo di contenuto con `type`, `subtype`, `confidence`, `secondary_type`, `selected_recipe`, `selected_domain_profile`, `signals` e `reason`.
+9. Scegliere la recipe piu' adatta da `recipes/`.
+10. Selezionare il knowledge context seguendo `knowledge/registry.yml`.
+11. Per riunioni di lavoro, usare sempre `knowledge/global/` e `knowledge/work_meetings/`.
+12. Per contenuti non-meeting, usare `knowledge/global/` e una macro-categoria in `knowledge/macro_categories/`, oppure `generic` come fallback.
+13. Se strettamente pertinente e gia' previsto dal progetto, scegliere un domain profile da `domain_profiles/` e dichiararlo nella classification; non creare nuovi domain profile granulari.
+14. Leggere `prompt_templates/meta_prompt.md` e `prompt_templates/final_analysis_prompt.md`.
+15. Generare un prompt ottimizzato per la trascrizione selezionata.
+16. Salvare il prompt in `output/prompts/<nome>_generated_prompt.md`.
+17. Applicare il prompt alla trascrizione selezionata.
+18. Salvare la classificazione in `output/json/<nome>_classification.json`.
+19. Salvare l'analisi strutturata in `output/json/<nome>_analysis.json`.
+20. Salvare il riepilogo leggibile in `output/markdown/<nome>_summary.md`.
+21. Se ci sono candidati, segnalarli solo come nota operativa separata dagli output finali.
+22. Fare un controllo qualita' finale su completezza, tracciabilita', assenza di invenzioni e rispetto degli schemi.
 
 ## Output atteso
 

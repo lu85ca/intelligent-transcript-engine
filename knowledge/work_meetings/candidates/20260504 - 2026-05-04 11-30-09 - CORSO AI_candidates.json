@@ -29,7 +29,7 @@
       ],
       "occurrences": null,
       "created_at": "2026-05-26T18:58:06.039575+00:00",
-      "updated_at": "2026-05-26T20:42:22.151695+00:00"
+      "updated_at": "2026-05-27T11:13:08.091616+00:00"
     },
     {
       "id": "cand_0cc72544b4",
@@ -52,7 +52,7 @@
       ],
       "occurrences": null,
       "created_at": "2026-05-26T18:58:06.039575+00:00",
-      "updated_at": "2026-05-26T20:42:22.151696+00:00"
+      "updated_at": "2026-05-27T11:13:08.091618+00:00"
     },
     {
       "id": "cand_898ace31ba",
@@ -75,10 +75,10 @@
       ],
       "occurrences": null,
       "created_at": "2026-05-26T18:58:06.039575+00:00",
-      "updated_at": "2026-05-26T20:42:22.151698+00:00"
+      "updated_at": "2026-05-27T11:13:08.091620+00:00"
     }
   ],
   "warnings": [],
-  "updated_at": "2026-05-26T20:42:22.151707+00:00",
+  "updated_at": "2026-05-27T11:13:08.091628+00:00",
   "candidate_file": "knowledge/work_meetings/candidates/20260504 - 2026-05-04 11-30-09 - CORSO AI_candidates.json"
 }

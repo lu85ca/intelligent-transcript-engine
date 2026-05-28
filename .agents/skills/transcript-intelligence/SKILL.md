@@ -17,7 +17,10 @@ Use this skill when Codex is asked to analyze a transcript in `input/transcripts
 - The transcript is the only primary source for meeting facts, confirmed decisions, hypotheses, orientations, action items, risks, follow-ups and open questions.
 - Operational metadata must not appear as a source or justification in final content, including `interpretations` and domain normalization explanations.
 - Candidate suggestions are not approved terms or active normalization rules. Do not apply candidates unless they have been manually promoted into approved knowledge files.
-- For video/audio requests, run the deterministic Step 6A preprocessing runner first. If the pipeline report is not ready for agent analysis, stop and ask for review instead of producing final outputs.
+- For video/audio requests such as "riassumi questo video", "ho messo un video in input/videos" or "analizza l'ultimo video", run the deterministic Step 6A preprocessing runner first.
+- If the Step 6A pipeline report has `ready_for_agent_analysis: false`, stop and ask for review instead of producing final summary, analysis or classification.
+- If the Step 6A pipeline report is ready, use only `selected_transcript` as source content for the agent-driven workflow.
+- Pipeline reports, review reports, normalization reports, candidate files, quality warnings, normalization candidates, technical logs and frontmatter are operational metadata. Do not turn them into narrative content.
 - Do not write phrases such as "supportato dal domain profile", "secondo la recipe", "in base allo schema", "come indicato nel generated prompt" or "seguendo le istruzioni del workflow" in final meeting-content fields.
 - Domain normalizations may be explained only through textual evidence from the transcript. Correct: "La normalizzazione di Stardus/Stardust come STARDAS è supportata dai riferimenti ripetuti al sistema documentale nella trascrizione." Incorrect: "La normalizzazione è supportata dal domain profile."
 - If an application domain such as SIGE IMU is not explicitly stated in the transcript, do not add it to `analysis.json` as a content interpretation. It may appear only as `selected_domain_profile` in `classification.json`.
@@ -33,22 +36,25 @@ Use this skill when Codex is asked to analyze a transcript in `input/transcripts
 1. Read `AGENTS.md`.
 2. Read this skill file.
 3. For video/audio or unprepared inputs, run Step 6A with `scripts/run_preprocessing_pipeline.py`.
-4. Select the analysis transcript with the project policy: normalized > reviewed > raw safe.
-5. If the pipeline or selector decision is `requires_review`, stop and ask for review/manual verification without producing final summary, analysis or classification.
-6. Read the selected transcript from `input/transcripts/`.
-7. Lightly clean the transcript mentally: remove obvious noise, normalize spacing and preserve meaning.
-8. Classify the content with `type` and, when useful, `subtype`.
-9. Select the most suitable recipe from `recipes/`.
-10. If the transcript clearly matches a domain profile, read the relevant file from `domain_profiles/`.
-11. Read `prompt_templates/meta_prompt.md`.
-12. Read `prompt_templates/final_analysis_prompt.md`.
-13. Generate the optimized final prompt for the selected transcript.
-14. Save it as `output/prompts/<name>_generated_prompt.md`.
-15. Apply the generated prompt to the selected transcript.
-16. Save Markdown output to `output/markdown/<name>_summary.md`.
-17. Save JSON analysis to `output/json/<name>_analysis.json`.
-18. Save JSON classification to `output/json/<name>_classification.json`.
-19. Run a final quality check.
+4. For generic requests about the latest uploaded video, use `--latest-video` when the input is unambiguous enough; otherwise ask which file to use.
+5. Read the Step 6A pipeline report.
+6. If `ready_for_agent_analysis` is false, stop and ask for review/manual verification without producing final summary, analysis or classification.
+7. Select the analysis transcript from `selected_transcript`, or with the project policy: normalized > reviewed > raw safe.
+8. Read only the selected transcript from `input/transcripts/` as source content.
+9. Lightly clean the transcript mentally: remove obvious noise, normalize spacing and preserve meaning.
+10. Classify the content with `type` and, when useful, `subtype`.
+11. Select the most suitable recipe from `recipes/`.
+12. If the transcript clearly matches a domain profile, read the relevant file from `domain_profiles/`.
+13. Read `prompt_templates/meta_prompt.md`.
+14. Read `prompt_templates/final_analysis_prompt.md`.
+15. Generate the optimized final prompt for the selected transcript.
+16. Save it as `output/prompts/<name>_generated_prompt.md`.
+17. Apply the generated prompt to the selected transcript.
+18. Save Markdown output to `output/markdown/<name>_summary.md`.
+19. Save JSON analysis to `output/json/<name>_analysis.json`.
+20. Save JSON classification to `output/json/<name>_classification.json`.
+21. If `candidate_count > 0`, mention candidates only in a separate operational note after the final outputs and suggest `python3 scripts/manage_candidates.py list --context <context>`.
+22. Run a final quality check.
 
 ## Classification
 
@@ -110,3 +116,5 @@ For `input/transcripts/example.md`, expected debug prompt path:
 - Confirm that Markdown and JSON are both produced.
 - Confirm that the generated prompt is saved.
 - Confirm that facts, interpretations, decisions, actions and open questions are separate.
+- Confirm that only `selected_transcript` was used as source content for video/audio requests.
+- Confirm that technical pipeline metadata and candidate suggestions did not enter final content.

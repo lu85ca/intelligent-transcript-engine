@@ -251,6 +251,36 @@ python3 scripts/run_preprocessing_pipeline.py "<basename>" --context work_meetin
 
 Il runner esegue o salta in modo idempotente: trascrizione raw, review, normalizzazione, raccolta candidati e selezione transcript. Se il report finale contiene `ready_for_agent_analysis: true`, usare `selected_transcript` come unico contenuto per il workflow agent-driven. Se contiene `requires_manual_review: true`, fermarsi e revisionare prima di generare il summary finale.
 
+## Riassumere un video con Codex
+
+Per richieste del tipo "riassumi questo video", "ho messo un video in input/videos" o "analizza l'ultimo video", Codex deve usare Step 6A come ingresso standard.
+
+Flusso:
+
+1. Eseguire `scripts/run_preprocessing_pipeline.py` sul file indicato, sul basename o con `--latest-video`.
+2. Leggere il JSON del pipeline report.
+3. Se `ready_for_agent_analysis` e' `false`, fermarsi e indicare cosa revisionare.
+4. Se `ready_for_agent_analysis` e' `true`, usare solo `selected_transcript` come contenuto da analizzare.
+5. Applicare il workflow transcript-intelligence e produrre:
+   - `output/prompts/<nome>_generated_prompt.md`
+   - `output/markdown/<nome>_summary.md`
+   - `output/json/<nome>_classification.json`
+   - `output/json/<nome>_analysis.json`
+
+Esempio operativo per ultimo video:
+
+```bash
+python3 scripts/run_preprocessing_pipeline.py --latest-video --context work_meetings --json
+```
+
+Se il report indica candidati, Codex puo' segnalarli in una nota operativa separata dal summary:
+
+```bash
+python3 scripts/manage_candidates.py list --context work_meetings
+```
+
+I candidati non vengono promossi automaticamente e non sono contenuto del video. Anche pipeline report, quality warnings, review report, normalization report, candidate file, log tecnici e frontmatter restano operational metadata.
+
 ## Flusso agent-driven
 
 1. Inserire o preparare una trascrizione in `input/transcripts/`.
@@ -269,6 +299,7 @@ Il runner esegue o salta in modo idempotente: trascrizione raw, review, normaliz
    - `output/json/<nome>_classification.json`
    - `output/json/<nome>_analysis.json`
    - `output/markdown/<nome>_summary.md`
+14. Se `candidate_count > 0`, Codex segnala i candidati in una nota operativa separata dagli output finali e non promuove nulla automaticamente.
 
 ## Metodo
 
@@ -304,4 +335,4 @@ Output atteso:
 
 ## Stato attuale
 
-Workflow agent-driven documentato. Pipeline locale implementata fino al runner Step 6A: raw, review, gestione candidati, normalizzazione conservativa e selezione del transcript di analisi. Nessuna orchestrazione end-to-end agent-driven o chiamata Codex da script e' implementata.
+Workflow agent-driven documentato. Pipeline locale implementata fino all'integrazione Step 6B: Codex usa Step 6A per preparare video/audio, poi analizza `selected_transcript` con il workflow agent-driven. Nessuno script deterministico invoca Codex CLI.
