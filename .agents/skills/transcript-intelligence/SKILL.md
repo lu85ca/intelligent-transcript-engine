@@ -20,7 +20,9 @@ Use this skill when Codex is asked to analyze a transcript in `input/transcripts
 - For video/audio requests such as "riassumi questo video", "ho messo un video in input/videos" or "analizza l'ultimo video", run the deterministic Step 6A preprocessing runner first.
 - If the Step 6A pipeline report has `ready_for_agent_analysis: false`, stop and ask for review instead of producing final summary, analysis or classification.
 - If the Step 6A pipeline report is ready, use only `selected_transcript` as source content for the agent-driven workflow.
+- If the user asks for a PDF, generate the Markdown/JSON outputs first, then run Step 7 with `scripts/export_summary_pdf.py` on the generated summary Markdown.
 - Pipeline reports, review reports, normalization reports, candidate files, quality warnings, normalization candidates, technical logs and frontmatter are operational metadata. Do not turn them into narrative content.
+- The PDF export script is deterministic: it converts an existing `summary.md` to PDF with Pandoc, does not create new content, does not modify `summary.md`, and does not invoke Codex CLI.
 - Do not write phrases such as "supportato dal domain profile", "secondo la recipe", "in base allo schema", "come indicato nel generated prompt" or "seguendo le istruzioni del workflow" in final meeting-content fields.
 - Domain normalizations may be explained only through textual evidence from the transcript. Correct: "La normalizzazione di Stardus/Stardust come STARDAS è supportata dai riferimenti ripetuti al sistema documentale nella trascrizione." Incorrect: "La normalizzazione è supportata dal domain profile."
 - If an application domain such as SIGE IMU is not explicitly stated in the transcript, do not add it to `analysis.json` as a content interpretation. It may appear only as `selected_domain_profile` in `classification.json`.
@@ -53,8 +55,9 @@ Use this skill when Codex is asked to analyze a transcript in `input/transcripts
 18. Save Markdown output to `output/markdown/<name>_summary.md`.
 19. Save JSON analysis to `output/json/<name>_analysis.json`.
 20. Save JSON classification to `output/json/<name>_classification.json`.
-21. If `candidate_count > 0`, mention candidates only in a separate operational note after the final outputs and suggest `python3 scripts/manage_candidates.py list --context <context>`.
-22. Run a final quality check.
+21. If the user requested PDF export, run `python3 scripts/export_summary_pdf.py "output/markdown/<name>_summary.md" --output-dir "output/pdf"` unless the user requested a different output directory.
+22. If `candidate_count > 0`, mention candidates only in a separate operational note after the final outputs and suggest `python3 scripts/manage_candidates.py list --context <context>`.
+23. Run a final quality check.
 
 ## Classification
 
@@ -114,6 +117,7 @@ For `input/transcripts/example.md`, expected debug prompt path:
 - Confirm that proposals and hypotheses are not reported as confirmed decisions.
 - Confirm that confirmed decisions have explicit support in the transcript.
 - Confirm that Markdown and JSON are both produced.
+- If requested, confirm that PDF export was performed from the generated summary Markdown, not by generating new content.
 - Confirm that the generated prompt is saved.
 - Confirm that facts, interpretations, decisions, actions and open questions are separate.
 - Confirm that only `selected_transcript` was used as source content for video/audio requests.

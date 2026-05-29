@@ -7,6 +7,7 @@ output/prompts/<nome>_generated_prompt.md
 output/markdown/<nome>_summary.md
 output/json/<nome>_classification.json
 output/json/<nome>_analysis.json
+output/pdf/<nome>_summary.pdf
 ```
 
 Il progetto separa due parti:
@@ -29,6 +30,7 @@ Gli script preparano e controllano il materiale. Codex interpreta il contenuto e
 4. Codex usa il transcript selezionato dalla pipeline.
 5. Codex genera `generated_prompt.md`, `summary.md`, `classification.json` e `analysis.json`.
 6. Il sistema raccoglie eventuali candidati dizionario da rivedere in futuro.
+7. Se richiesto, esporta il summary Markdown in PDF con Pandoc.
 
 Prompt consigliato:
 
@@ -61,6 +63,7 @@ output/pipeline/               report della pipeline completa
 output/prompts/                generated prompt interni/debug
 output/markdown/               summary leggibili
 output/json/                   classification e analysis JSON
+output/pdf/                    PDF esportati dai summary Markdown
 
 knowledge/global/              regole davvero trasversali
 knowledge/work_meetings/       knowledge per tutte le riunioni di lavoro
@@ -103,9 +106,11 @@ Step 4: raccolta candidati dizionario
 Step 5: selezione del transcript migliore
 Step 6A: report operativo della pipeline
 Step 6B: Codex usa il selected_transcript nel workflow agent-driven
+Step 7: export PDF deterministico da summary.md
 ```
 
 Gli script non invocano Codex CLI e non generano summary/classification/analysis. Questi output finali vengono generati solo dal workflow agent-driven di Codex.
+Lo script PDF non genera contenuto: converte solo un `summary.md` gia' esistente in PDF.
 
 ## Riassumere un video con Codex
 
@@ -254,6 +259,51 @@ Il file principale da leggere e':
 
 ```text
 output/markdown/<nome>_summary.md
+```
+
+## Export PDF
+
+Lo Step 7 converte un summary Markdown gia' generato in PDF usando Pandoc.
+
+Dipendenze richieste:
+
+```bash
+pandoc --version
+xelatex --version
+```
+
+Lo script non installa dipendenze, non invoca Codex CLI e non modifica il contenuto del summary.
+
+Uso da path diretto:
+
+```bash
+python3 scripts/export_summary_pdf.py "output/markdown/NOME_BASE_summary.md" --output-dir "output/pdf"
+```
+
+Uso da basename, secondo la convenzione reale `output/markdown/<basename>_summary.md`:
+
+```bash
+python3 scripts/export_summary_pdf.py "NOME_BASE" --output-dir "output/pdf"
+```
+
+Output:
+
+```text
+output/pdf/<basename>_summary.pdf
+```
+
+Opzioni utili:
+
+```bash
+python3 scripts/export_summary_pdf.py "NOME_BASE" --output-dir "output/pdf" --force --json
+python3 scripts/export_summary_pdf.py "NOME_BASE" --output-dir "output/pdf" --toc
+python3 scripts/export_summary_pdf.py "NOME_BASE" --output-dir "output/pdf" --output-name "riassunto.pdf"
+```
+
+Quando l'utente chiede "genera anche il PDF", Codex deve prima generare gli output agent-driven e poi eseguire:
+
+```bash
+python3 scripts/export_summary_pdf.py "<path/to/summary.md>" --output-dir "output/pdf"
 ```
 
 ## Regole Per Un Summary Pulito
@@ -595,6 +645,12 @@ Listare candidati:
 python3 scripts/manage_candidates.py list --context work_meetings
 ```
 
+Esportare il summary in PDF:
+
+```bash
+python3 scripts/export_summary_pdf.py "NOME_BASE" --output-dir "output/pdf"
+```
+
 ## Checklist Veloce
 
 ```text
@@ -604,6 +660,7 @@ python3 scripts/manage_candidates.py list --context work_meetings
 [ ] La pipeline restituisce ready_for_agent_analysis = true
 [ ] Codex usa selected_transcript
 [ ] Codex genera generated_prompt.md, summary.md, classification.json, analysis.json
+[ ] Se richiesto, Codex esporta output/markdown/<nome>_summary.md in PDF
 [ ] Controllo eventuali candidati dizionario
 [ ] Promuovo solo correzioni sicure
 ```
@@ -627,6 +684,7 @@ video/audio
 -> selected_transcript
 -> workflow agent-driven Codex
 -> generated_prompt.md / summary.md / classification.json / analysis.json
+-> PDF da summary.md solo se richiesto
 ```
 
 Nessuno script deterministico invoca Codex CLI. I candidati restano suggerimenti finche' non vengono promossi manualmente.

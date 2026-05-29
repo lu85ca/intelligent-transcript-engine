@@ -60,6 +60,8 @@ Per richieste generiche come "ho messo un video in input/videos" o "analizza l'u
 
 Dopo una pipeline pronta, generare gli output finali solo nella fase agent-driven e solo dalla trascrizione selezionata: `output/prompts/<nome>_generated_prompt.md`, `output/markdown/<nome>_summary.md`, `output/json/<nome>_classification.json` e `output/json/<nome>_analysis.json`. Se `candidate_count > 0`, segnalare i candidati solo come nota operativa separata, indicando eventualmente `python3 scripts/manage_candidates.py list --context <context>`. Non inserire candidati o report tecnici nel summary come contenuto del video/riunione.
 
+Se l'utente chiede anche un PDF, eseguire Step 7 solo dopo avere generato `summary.md`: usare `scripts/export_summary_pdf.py` per convertire il Markdown in PDF con Pandoc. Lo script PDF e' deterministico, non genera contenuto, non modifica `summary.md`, non produce classification/analysis e non invoca Codex CLI. Se l'utente non indica una cartella, usare `output/pdf`.
+
 ## Knowledge incrementale
 
 La conoscenza incrementale vive in `knowledge/` ed e' operational metadata.
@@ -158,8 +160,9 @@ Per ogni trascrizione in `input/transcripts/`, Codex deve:
 18. Salvare la classificazione in `output/json/<nome>_classification.json`.
 19. Salvare l'analisi strutturata in `output/json/<nome>_analysis.json`.
 20. Salvare il riepilogo leggibile in `output/markdown/<nome>_summary.md`.
-21. Se ci sono candidati, segnalarli solo come nota operativa separata dagli output finali.
-22. Fare un controllo qualita' finale su completezza, tracciabilita', assenza di invenzioni e rispetto degli schemi.
+21. Se richiesto dall'utente, esportare il summary in PDF con `python3 scripts/export_summary_pdf.py "output/markdown/<nome>_summary.md" --output-dir "output/pdf"`.
+22. Se ci sono candidati, segnalarli solo come nota operativa separata dagli output finali.
+23. Fare un controllo qualita' finale su completezza, tracciabilita', assenza di invenzioni e rispetto degli schemi.
 
 ## Output atteso
 
@@ -169,3 +172,7 @@ Per `input/transcripts/example.md`, quando richiesto, Codex deve produrre:
 - `output/markdown/example_summary.md`
 - `output/json/example_analysis.json`
 - `output/json/example_classification.json`
+
+Se richiesto anche il PDF, produrre:
+
+- `output/pdf/example_summary.pdf`
