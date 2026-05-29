@@ -18,7 +18,7 @@ COMMON_EXECUTABLE_DIRS = [
     Path("/Library/TeX/texbin"),
 ]
 
-MSG_MISSING_MARKDOWN = "Summary Markdown not found."
+MSG_MISSING_MARKDOWN = "Markdown source not found."
 MSG_EXISTING_PDF = "Output PDF already exists. Use --force to overwrite."
 MSG_MISSING_PANDOC = "Missing dependency: pandoc. Install Pandoc before exporting PDF."
 MSG_MISSING_ENGINE = "Missing PDF engine: {engine}. Install it before exporting PDF."
@@ -28,8 +28,8 @@ MSG_NO_CODEX = "This script only converts Markdown to PDF and does not invoke Co
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Export a final summary Markdown file to PDF with Pandoc.")
-    parser.add_argument("summary", help="Path to summary.md or transcript basename.")
+    parser = argparse.ArgumentParser(description="Export a final Markdown file to PDF with Pandoc.")
+    parser.add_argument("summary", help="Path to a final Markdown file or transcript basename.")
     parser.add_argument(
         "--output-dir",
         default=DEFAULT_OUTPUT_DIR,
@@ -76,20 +76,30 @@ def resolve_existing_path(value: str, root: Path) -> Path:
 def strip_summary_suffix(name: str) -> str:
     if name.endswith("_summary.md"):
         return name[: -len("_summary.md")]
+    if name.endswith("_detailed_notes.md"):
+        return name[: -len("_detailed_notes.md")]
     if name.endswith(".md"):
         return name[:-3]
     return name
 
 
 def basename_from_summary_path(path: Path) -> str:
-    if path.name == "summary.md" and path.parent.name:
+    if path.name in {"summary.md", "detailed_notes.md"} and path.parent.name:
         return path.parent.name
     return strip_summary_suffix(path.name)
 
 
+def markdown_output_kind(path: Path) -> str:
+    if path.name == "detailed_notes.md" or path.name.endswith("_detailed_notes.md"):
+        return "detailed_notes"
+    return "summary"
+
+
 def summary_candidates(root: Path, basename: str) -> list[Path]:
     return [
+        root / "output" / "markdown" / f"{basename}_detailed_notes.md",
         root / "output" / "markdown" / f"{basename}_summary.md",
+        root / "output" / "analysis" / basename / "detailed_notes.md",
         root / "output" / "analysis" / basename / "summary.md",
         root / "output" / "final" / basename / "summary.md",
         root / "output" / basename / "summary.md",
@@ -115,13 +125,14 @@ def safe_output_name(name: str) -> str:
     return name or "summary.pdf"
 
 
-def output_pdf_path(output_dir: Path, basename: str, output_name: str | None) -> Path:
+def output_pdf_path(output_dir: Path, basename: str, output_name: str | None, source_kind: str = "summary") -> Path:
     if output_name:
         name = safe_output_name(output_name)
         if not name.lower().endswith(".pdf"):
             name = f"{name}.pdf"
         return output_dir / name
-    return output_dir / f"{basename}_summary.pdf"
+    suffix = "detailed_notes" if source_kind == "detailed_notes" else "summary"
+    return output_dir / f"{basename}_{suffix}.pdf"
 
 
 def extract_markdown_title(path: Path) -> str | None:
@@ -293,7 +304,7 @@ def export_summary_pdf(
     root = root or project_root()
     source_markdown, basename, _ = resolve_summary_input(summary_input, root)
     output_dir = resolve_existing_path(output_dir_value, root)
-    output_pdf = output_pdf_path(output_dir, basename, output_name)
+    output_pdf = output_pdf_path(output_dir, basename, output_name, markdown_output_kind(source_markdown))
     overwritten = output_pdf.exists() and force
     report = base_report(
         source_markdown=source_markdown,

@@ -1,0 +1,248 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WebinarTranscriptAnalysis",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "content_type",
+    "title",
+    "executive_summary",
+    "detailed_summary",
+    "content_map",
+    "key_concepts",
+    "tools_mentioned",
+    "demos_or_walkthroughs",
+    "examples",
+    "frameworks_or_models",
+    "audience_questions",
+    "takeaways",
+    "applicable_actions",
+    "risks_or_caveats",
+    "source_limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "content_type": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "executive_summary": {
+      "type": "string"
+    },
+    "detailed_summary": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "section_title",
+          "content",
+          "supporting_details"
+        ],
+        "properties": {
+          "section_title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "supporting_details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "content_map": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "section",
+          "description"
+        ],
+        "properties": {
+          "section": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "key_concepts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "explanation",
+          "context"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "explanation": {
+            "type": "string"
+          },
+          "context": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "tools_mentioned": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "description",
+          "role_in_webinar",
+          "demo_context",
+          "limitations_or_caveats"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "role_in_webinar": {
+            "type": "string"
+          },
+          "demo_context": {
+            "type": "string"
+          },
+          "limitations_or_caveats": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "demos_or_walkthroughs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "goal",
+          "steps",
+          "tools_used",
+          "outcome",
+          "limitations_or_caveats"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "goal": {
+            "type": "string"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tools_used": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "limitations_or_caveats": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "examples": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "frameworks_or_models": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "audience_questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "question_or_topic",
+          "answer",
+          "status"
+        ],
+        "properties": {
+          "question_or_topic": {
+            "type": "string"
+          },
+          "answer": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "answered",
+              "partially_answered",
+              "open"
+            ]
+          }
+        }
+      }
+    },
+    "takeaways": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "applicable_actions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "risks_or_caveats": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source_limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

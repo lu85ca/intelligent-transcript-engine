@@ -20,9 +20,12 @@ Use this skill when Codex is asked to analyze a transcript in `input/transcripts
 - For video/audio requests such as "riassumi questo video", "ho messo un video in input/videos" or "analizza l'ultimo video", run the deterministic Step 6A preprocessing runner first.
 - If the Step 6A pipeline report has `ready_for_agent_analysis: false`, stop and ask for review instead of producing final summary, analysis or classification.
 - If the Step 6A pipeline report is ready, use only `selected_transcript` as source content for the agent-driven workflow.
-- If the user asks for a PDF, generate the Markdown/JSON outputs first, then run Step 7 with `scripts/export_summary_pdf.py` on the generated summary Markdown.
+- If the user asks for a PDF, generate the Markdown/JSON outputs first, then run Step 7 with `scripts/export_summary_pdf.py` on the generated primary Markdown.
 - Pipeline reports, review reports, normalization reports, candidate files, quality warnings, normalization candidates, technical logs and frontmatter are operational metadata. Do not turn them into narrative content.
-- The PDF export script is deterministic: it converts an existing `summary.md` to PDF with Pandoc, does not create new content, does not modify `summary.md`, and does not invoke Codex CLI.
+- The PDF export script is deterministic: it converts an existing Markdown file to PDF with Pandoc, does not create new content, does not modify the source Markdown, and does not invoke Codex CLI.
+- For long webinars, round tables, demos or sessions with many tools/Q&A, do not force the generic analysis structure. Use `recipes/webinar.md`, `schemas/webinar_analysis.schema.json`, and create `output/markdown/<name>_detailed_notes.md` as the only primary Markdown output.
+- Do not create or update `summary.md` for long webinar or round table outputs. If `summary.md` already exists from a previous run, treat it as legacy/stale.
+- Webinar outputs must separate tools mentioned, demos or walkthroughs, examples, frameworks or models, audience questions, takeaways, applicable actions and risks or caveats.
 - Do not write phrases such as "supportato dal domain profile", "secondo la recipe", "in base allo schema", "come indicato nel generated prompt" or "seguendo le istruzioni del workflow" in final meeting-content fields.
 - Domain normalizations may be explained only through textual evidence from the transcript. Correct: "La normalizzazione di Stardus/Stardust come STARDAS è supportata dai riferimenti ripetuti al sistema documentale nella trascrizione." Incorrect: "La normalizzazione è supportata dal domain profile."
 - If an application domain such as SIGE IMU is not explicitly stated in the transcript, do not add it to `analysis.json` as a content interpretation. It may appear only as `selected_domain_profile` in `classification.json`.
@@ -52,12 +55,13 @@ Use this skill when Codex is asked to analyze a transcript in `input/transcripts
 15. Generate the optimized final prompt for the selected transcript.
 16. Save it as `output/prompts/<name>_generated_prompt.md`.
 17. Apply the generated prompt to the selected transcript.
-18. Save Markdown output to `output/markdown/<name>_summary.md`.
+18. Save the primary Markdown output. For generic/meeting/youtube flows this is usually `output/markdown/<name>_summary.md`; for long webinars or round tables this is only `output/markdown/<name>_detailed_notes.md`.
 19. Save JSON analysis to `output/json/<name>_analysis.json`.
 20. Save JSON classification to `output/json/<name>_classification.json`.
-21. If the user requested PDF export, run `python3 scripts/export_summary_pdf.py "output/markdown/<name>_summary.md" --output-dir "output/pdf"` unless the user requested a different output directory.
-22. If `candidate_count > 0`, mention candidates only in a separate operational note after the final outputs and suggest `python3 scripts/manage_candidates.py list --context <context>`.
-23. Run a final quality check.
+21. For long webinars or round tables, do not create or update `output/markdown/<name>_summary.md`.
+22. If the user requested PDF export, run `python3 scripts/export_summary_pdf.py "<primary markdown path>" --output-dir "output/pdf"` unless the user requested a different output directory. For long webinars, the primary markdown path is `output/markdown/<name>_detailed_notes.md`.
+23. If `candidate_count > 0`, mention candidates only in a separate operational note after the final outputs and suggest `python3 scripts/manage_candidates.py list --context <context>`.
+24. Run a final quality check.
 
 ## Classification
 
@@ -68,6 +72,7 @@ Classification must include:
 - `confidence`: score from 0 to 1.
 - `secondary_type`: alternate plausible type, or `non rilevato`.
 - `selected_recipe`: recipe file to use.
+- `selected_analysis_schema`: analysis schema file to use.
 - `selected_domain_profile`: domain profile file to use, or `non rilevato`.
 - `signals`: textual clues that support the classification.
 - `reason`: concise explanation.
@@ -90,6 +95,12 @@ Domain profiles help normalize domain terminology and preserve domain-specific c
 If a domain profile is used, set `selected_domain_profile` in the classification. If none is used, set it to `non rilevato`.
 
 Domain profiles can guide normalization and interpretation of terms already present in the transcript. They are not a primary source for meeting content and must not add facts, interpretations, decisions, actions, risks or open questions that are absent from the transcript. When documenting a normalization in final content, cite only transcript evidence, never the domain profile itself.
+
+## Webinar Outputs
+
+For webinars, use `schemas/webinar_analysis.schema.json` instead of the generic schema. The webinar analysis must include executive summary, detailed summary, content map, key concepts, tools mentioned, demos or walkthroughs, examples, frameworks or models, audience questions, takeaways, applicable actions, risks or caveats and source limitations when supported by the transcript.
+
+For long webinars or round tables, generate `output/markdown/<name>_detailed_notes.md` as the only Markdown deliverable. This file must include the executive overview and detailed thematic coverage in one document, but it must not copy the transcript or include technical pipeline metadata. Do not create or update `summary.md` for this flow.
 
 ## Prompt Debugging
 
@@ -117,7 +128,9 @@ For `input/transcripts/example.md`, expected debug prompt path:
 - Confirm that proposals and hypotheses are not reported as confirmed decisions.
 - Confirm that confirmed decisions have explicit support in the transcript.
 - Confirm that Markdown and JSON are both produced.
-- If requested, confirm that PDF export was performed from the generated summary Markdown, not by generating new content.
+- For webinar outputs, confirm that the webinar schema and webinar-specific Markdown sections were used.
+- For long webinars, confirm that `detailed_notes.md` exists as the only Markdown deliverable and `summary.md` was not updated.
+- If requested, confirm that PDF export was performed from the generated primary Markdown, not by generating new content.
 - Confirm that the generated prompt is saved.
 - Confirm that facts, interpretations, decisions, actions and open questions are separate.
 - Confirm that only `selected_transcript` was used as source content for video/audio requests.

@@ -46,7 +46,7 @@ La pipeline di preprocessing video/audio deve seguire questi confini:
 - non aggiungere API esterne non richieste;
 - la classificazione e l'analisi finale restano agent-driven.
 
-I file generati dal preprocessing, inclusi frontmatter della trascrizione raw e log tecnici in `output/preprocessing/` e `output/transcription/`, sono operational metadata. Anche campi tecnici come `quality_warnings`, `normalization_candidates` e `safe_for_analysis` sono operational metadata: possono aiutare tracciabilita', debug e decisioni operative sulla qualita' dell'input, ma non devono finire come contenuto in `summary.md` o `analysis.json`. Il workflow agent-driven inizia dalla trascrizione testuale preparata e deve continuare a distinguere contenuto sorgente e metadati tecnici. I warning tecnici non devono essere trattati come fatti del webinar o della riunione.
+I file generati dal preprocessing, inclusi frontmatter della trascrizione raw e log tecnici in `output/preprocessing/` e `output/transcription/`, sono operational metadata. Anche campi tecnici come `quality_warnings`, `normalization_candidates` e `safe_for_analysis` sono operational metadata: possono aiutare tracciabilita', debug e decisioni operative sulla qualita' dell'input, ma non devono finire come contenuto nel Markdown finale o in `analysis.json`. Il workflow agent-driven inizia dalla trascrizione testuale preparata e deve continuare a distinguere contenuto sorgente e metadati tecnici. I warning tecnici non devono essere trattati come fatti del webinar o della riunione.
 
 Prima dell'analisi agent-driven, selezionare il transcript con la policy `normalized > reviewed > raw safe`, usando `scripts/select_analysis_transcript.py` quando utile. Se esiste una versione in `input/transcripts/normalized/`, usare quella. Se non esiste normalized ma esiste una versione in `input/transcripts/reviewed/`, usare reviewed. Se esiste solo raw, usarlo solo quando il JSON tecnico di trascrizione contiene `safe_for_analysis: true`.
 
@@ -54,13 +54,17 @@ Se esiste solo raw e `safe_for_analysis` e' `false`, `null`, assente o non verif
 
 La gestione dei candidati di Step 4 e' separata dalle regole approvate: `knowledge/*/candidates/` contiene suggerimenti da revisionare, non normalizzazioni attive. Gli script di candidate management possono raccogliere, listare, rifiutare o promuovere manualmente candidati; solo una promozione esplicita puo' modificare `approved_terms.yml` o `normalization_rules.yml`. Step 3 non deve leggere o applicare file in `candidates/`.
 
-Quando l'utente chiede di riassumere un video/audio o un contenuto non ancora preparato, eseguire prima Step 6A con `scripts/run_preprocessing_pipeline.py`. Se il pipeline report contiene `ready_for_agent_analysis: true`, usare solo `selected_transcript` come contenuto sorgente dell'analisi agent-driven. Se contiene `requires_manual_review: true` o `pipeline_status: failed`, fermarsi e spiegare l'azione richiesta senza generare summary, classification o analysis. Il pipeline report e' operational metadata.
+Quando l'utente chiede di riassumere un video/audio o un contenuto non ancora preparato, eseguire prima Step 6A con `scripts/run_preprocessing_pipeline.py`. Se il pipeline report contiene `ready_for_agent_analysis: true`, usare solo `selected_transcript` come contenuto sorgente dell'analisi agent-driven. Se contiene `requires_manual_review: true` o `pipeline_status: failed`, fermarsi e spiegare l'azione richiesta senza generare Markdown finale, classification o analysis. Il pipeline report e' operational metadata.
 
 Per richieste generiche come "ho messo un video in input/videos" o "analizza l'ultimo video", usare `--latest-video` se la richiesta non indica un file specifico. Se ci sono più input plausibili e scegliere l'ultimo non e' ragionevole dal contesto, chiedere quale file usare. Il context default e' `work_meetings`; usare macro-categorie solo quando l'utente le indica o il contenuto e' chiaramente non-meeting.
 
-Dopo una pipeline pronta, generare gli output finali solo nella fase agent-driven e solo dalla trascrizione selezionata: `output/prompts/<nome>_generated_prompt.md`, `output/markdown/<nome>_summary.md`, `output/json/<nome>_classification.json` e `output/json/<nome>_analysis.json`. Se `candidate_count > 0`, segnalare i candidati solo come nota operativa separata, indicando eventualmente `python3 scripts/manage_candidates.py list --context <context>`. Non inserire candidati o report tecnici nel summary come contenuto del video/riunione.
+Dopo una pipeline pronta, generare gli output finali solo nella fase agent-driven e solo dalla trascrizione selezionata: `output/prompts/<nome>_generated_prompt.md`, un output Markdown primario, `output/json/<nome>_classification.json` e `output/json/<nome>_analysis.json`. Per i flussi non-webinar l'output Markdown primario resta normalmente `output/markdown/<nome>_summary.md`. Per webinar lunghi o round table l'output Markdown primario e unico e' `output/markdown/<nome>_detailed_notes.md`. Se `candidate_count > 0`, segnalare i candidati solo come nota operativa separata, indicando eventualmente `python3 scripts/manage_candidates.py list --context <context>`. Non inserire candidati o report tecnici negli output finali come contenuto del video/riunione.
 
-Se l'utente chiede anche un PDF, eseguire Step 7 solo dopo avere generato `summary.md`: usare `scripts/export_summary_pdf.py` per convertire il Markdown in PDF con Pandoc. Lo script PDF e' deterministico, non genera contenuto, non modifica `summary.md`, non produce classification/analysis e non invoca Codex CLI. Se l'utente non indica una cartella, usare `output/pdf`.
+Se l'utente chiede anche un PDF, eseguire Step 7 solo dopo avere generato il Markdown finale: usare `scripts/export_summary_pdf.py` per convertire il Markdown in PDF con Pandoc. Per webinar lunghi esportare `detailed_notes.md`, non `summary.md`. Lo script PDF e' deterministico, non genera contenuto, non modifica il Markdown sorgente, non produce classification/analysis e non invoca Codex CLI. Se l'utente non indica una cartella, usare `output/pdf`.
+
+Per webinar lunghi, round table, demo o sessioni con molti strumenti/Q&A, non comprimere tutto nella struttura generic. Se `classification.type = webinar` o `selected_recipe = recipes/webinar.md`, usare `schemas/webinar_analysis.schema.json` e produrre `output/markdown/<nome>_detailed_notes.md` come unico Markdown finale. Non generare, aggiornare o richiedere `summary.md` per questi contenuti; se esiste da una run precedente, considerarlo legacy/stale. Separare strumenti citati, demo/walkthrough, esempi, framework, Q&A, takeaway, azioni applicabili e caveat. `detailed_notes.md` deve contenere anche una executive overview e conservare copertura estesa senza diventare una riscrittura della trascrizione.
+
+Se l'utente segnala che un output webinar e' troppo scarno, verificare recipe scelta, `generated_prompt.md`, rapporto tra lunghezza transcript e `detailed_notes.md`, assenza di aggiornamenti a `summary.md` e schema usato in `analysis.json`.
 
 ## Knowledge incrementale
 
@@ -127,7 +131,7 @@ Le decisioni confermate devono essere più restrittive: una voce può essere cla
 
 In assenza di evidenza esplicita, preferire sempre una categoria meno forte: orientamento tecnico, ipotesi emersa, proposta non confermata o punto aperto.
 
-Prima di salvare `summary.md` e `analysis.json`, Codex deve fare un controllo qualità specifico:
+Prima di salvare il Markdown primario e `analysis.json`, Codex deve fare un controllo qualità specifico:
 
 - cercare nel summary e nel JSON eventuali frasi che derivano da regole operative, istruzioni di progetto o metadati del workflow;
 - se presenti, rimuoverle dai contenuti della riunione;
@@ -147,7 +151,7 @@ Per ogni trascrizione in `input/transcripts/`, Codex deve:
 5. Selezionare il transcript da analizzare con priorita' `normalized > reviewed > raw safe`, usando `selected_transcript` del pipeline report quando disponibile.
 6. Se la policy restituisce `requires_review`, fermarsi e chiedere review/verifica manuale senza produrre output finali.
 7. Leggere solo la trascrizione selezionata come contenuto sorgente.
-8. Classificare il tipo di contenuto con `type`, `subtype`, `confidence`, `secondary_type`, `selected_recipe`, `selected_domain_profile`, `signals` e `reason`.
+8. Classificare il tipo di contenuto con `type`, `subtype`, `confidence`, `secondary_type`, `selected_recipe`, `selected_analysis_schema`, `selected_domain_profile`, `signals` e `reason`.
 9. Scegliere la recipe piu' adatta da `recipes/`.
 10. Selezionare il knowledge context seguendo `knowledge/registry.yml`.
 11. Per riunioni di lavoro, usare sempre `knowledge/global/` e `knowledge/work_meetings/`.
@@ -159,10 +163,11 @@ Per ogni trascrizione in `input/transcripts/`, Codex deve:
 17. Applicare il prompt alla trascrizione selezionata.
 18. Salvare la classificazione in `output/json/<nome>_classification.json`.
 19. Salvare l'analisi strutturata in `output/json/<nome>_analysis.json`.
-20. Salvare il riepilogo leggibile in `output/markdown/<nome>_summary.md`.
-21. Se richiesto dall'utente, esportare il summary in PDF con `python3 scripts/export_summary_pdf.py "output/markdown/<nome>_summary.md" --output-dir "output/pdf"`.
-22. Se ci sono candidati, segnalarli solo come nota operativa separata dagli output finali.
-23. Fare un controllo qualita' finale su completezza, tracciabilita', assenza di invenzioni e rispetto degli schemi.
+20. Salvare il Markdown primario: per contenuti non-webinar normalmente `output/markdown/<nome>_summary.md`; per webinar lunghi o round table solo `output/markdown/<nome>_detailed_notes.md`.
+21. Per webinar lunghi o round table, non aggiornare `summary.md` anche se esiste da run precedenti.
+22. Se richiesto dall'utente, esportare il Markdown primario in PDF con `python3 scripts/export_summary_pdf.py "<path/to/markdown.md>" --output-dir "output/pdf"`.
+23. Se ci sono candidati, segnalarli solo come nota operativa separata dagli output finali.
+24. Fare un controllo qualita' finale su completezza, tracciabilita', assenza di invenzioni e rispetto degli schemi.
 
 ## Output atteso
 
@@ -173,6 +178,11 @@ Per `input/transcripts/example.md`, quando richiesto, Codex deve produrre:
 - `output/json/example_analysis.json`
 - `output/json/example_classification.json`
 
+Per webinar lunghi o round table, invece di `output/markdown/example_summary.md`, produrre:
+
+- `output/markdown/example_detailed_notes.md`
+
 Se richiesto anche il PDF, produrre:
 
-- `output/pdf/example_summary.pdf`
+- `output/pdf/example_summary.pdf` per flussi non-webinar
+- `output/pdf/example_detailed_notes.pdf` per webinar lunghi o round table

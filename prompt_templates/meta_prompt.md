@@ -42,6 +42,7 @@ The generated prompt must instruct the agent to:
 
 - classify before analysis;
 - include `type`, `subtype`, `selected_recipe` and `selected_domain_profile` in the classification;
+- include `selected_analysis_schema` in the classification;
 - avoid timestamps or timecodes in the final output;
 - avoid invented information;
 - use `non rilevato` when data is missing or unclear;
@@ -56,7 +57,7 @@ The generated prompt must instruct the agent to:
 - if an application domain such as SIGE IMU is not explicitly stated in the transcript, keep it out of `analysis.json` content interpretations; it may appear only as `selected_domain_profile` in `classification.json`;
 - separate facts, interpretations, decisions, actions and open questions;
 - produce Markdown and JSON outputs;
-- save classification JSON, analysis JSON and summary Markdown;
+- save classification JSON, analysis JSON and the primary Markdown output;
 - preserve source limitations;
 - keep the workflow simple and incremental.
 
@@ -76,6 +77,8 @@ The generated prompt must include:
 - exact output file paths;
 - required Markdown sections;
 - required JSON fields;
+- when `selected_recipe` is `recipes/webinar.md`, webinar-specific output sections and `schemas/webinar_analysis.schema.json`;
+- when the webinar is long-form or a round table, the requirement to use `detailed_notes.md` as the only primary Markdown output and not generate or update `summary.md`;
 - final quality checklist.
 
 The generated prompt must be saved as `output/prompts/<name>_generated_prompt.md` for debugging. The user should not need to manually rerun it.
@@ -87,6 +90,7 @@ The generated prompt should document:
 - selected domain profile, if any;
 - rules applied;
 - output structure;
+- whether `detailed_notes.md` is the primary Markdown output;
 - quality checklist.
 
 The quality checklist must include a content contamination check before saving final outputs.

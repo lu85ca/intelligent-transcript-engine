@@ -9,6 +9,7 @@
     "confidence",
     "secondary_type",
     "selected_recipe",
+    "selected_analysis_schema",
     "selected_domain_profile",
     "signals",
     "reason"
@@ -55,6 +56,14 @@
         "recipes/technical_flow_meeting.md",
         "recipes/webinar.md",
         "recipes/youtube_video.md",
+        "non rilevato"
+      ]
+    },
+    "selected_analysis_schema": {
+      "type": "string",
+      "enum": [
+        "schemas/generic_analysis.schema.json",
+        "schemas/webinar_analysis.schema.json",
         "non rilevato"
       ]
     },

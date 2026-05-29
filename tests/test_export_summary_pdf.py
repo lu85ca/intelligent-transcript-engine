@@ -233,6 +233,45 @@ class ExportSummaryPdfTests(unittest.TestCase):
             self.assertEqual(basename, "demo-path")
             self.assertEqual(input_type, "path")
 
+    def test_detailed_notes_path_uses_detailed_notes_pdf_name(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "output" / "markdown" / "demo_detailed_notes.md"
+            source.parent.mkdir(parents=True)
+            source.write_text("# Demo notes\n\nTesto.", encoding="utf-8")
+            expected_pdf = root / "output" / "pdf" / "demo_detailed_notes.pdf"
+
+            def fake_run(command: list[str], verbose: bool) -> subprocess.CompletedProcess[str]:
+                Path(command[3]).write_bytes(b"%PDF-1.7\nfake\n")
+                return subprocess.CompletedProcess(command, 0, "", "")
+
+            with patch.object(export_summary_pdf, "dependency_status", return_value={"pandoc": True, "xelatex": True}), patch.object(
+                export_summary_pdf, "run_pandoc", side_effect=fake_run
+            ), patch.object(export_summary_pdf, "pdf_page_count", return_value=1):
+                report, code = export_summary_pdf.export_summary_pdf(
+                    summary_input=source.as_posix(),
+                    output_dir_value="output/pdf",
+                    root=root,
+                )
+
+            self.assertEqual(code, 0)
+            self.assertTrue(expected_pdf.exists())
+            self.assertEqual(report["output_pdf"], "output/pdf/demo_detailed_notes.pdf")
+
+    def test_basename_prefers_detailed_notes_when_present(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            summary = self.write_summary(root, basename="demo", body="# Legacy summary\n\nVecchio.")
+            detailed = root / "output" / "markdown" / "demo_detailed_notes.md"
+            detailed.write_text("# Detailed notes\n\nNuovo.", encoding="utf-8")
+
+            resolved, basename, input_type = export_summary_pdf.resolve_summary_input("demo", root)
+
+            self.assertEqual(resolved, detailed)
+            self.assertEqual(basename, "demo")
+            self.assertEqual(input_type, "basename")
+            self.assertTrue(summary.exists())
+
     @unittest.skipUnless(
         export_summary_pdf.command_available("pandoc") and export_summary_pdf.command_available("xelatex"),
         "pandoc/xelatex not available",

@@ -4,10 +4,11 @@
 
 ```text
 output/prompts/<nome>_generated_prompt.md
-output/markdown/<nome>_summary.md
+output/markdown/<nome>_summary.md                 per flussi non-webinar
+output/markdown/<nome>_detailed_notes.md          per webinar lunghi/round table
 output/json/<nome>_classification.json
 output/json/<nome>_analysis.json
-output/pdf/<nome>_summary.pdf
+output/pdf/<nome>_summary.pdf oppure <nome>_detailed_notes.pdf
 ```
 
 Il progetto separa due parti:
@@ -17,7 +18,7 @@ preprocessing deterministico
 -> trascrizione, review, normalizzazione, candidati dizionario
 
 workflow agent-driven
--> classificazione, recipe, generated prompt, summary, analysis JSON
+-> classificazione, recipe, generated prompt, Markdown primario, analysis JSON
 ```
 
 Gli script preparano e controllano il materiale. Codex interpreta il contenuto e genera il riassunto strutturato.
@@ -28,14 +29,14 @@ Gli script preparano e controllano il materiale. Codex interpreta il contenuto e
 2. Chiedi a Codex: `Riassumi questo video usando il workflow del progetto`.
 3. Codex esegue la pipeline locale deterministica.
 4. Codex usa il transcript selezionato dalla pipeline.
-5. Codex genera `generated_prompt.md`, `summary.md`, `classification.json` e `analysis.json`.
+5. Codex genera `generated_prompt.md`, il Markdown primario, `classification.json` e `analysis.json`.
 6. Il sistema raccoglie eventuali candidati dizionario da rivedere in futuro.
-7. Se richiesto, esporta il summary Markdown in PDF con Pandoc.
+7. Se richiesto, esporta il Markdown primario in PDF con Pandoc.
 
 Prompt consigliato:
 
 ```text
-Ho inserito un video in input/videos. Riassumi l'ultimo video usando il workflow del progetto. Esegui prima la pipeline di preprocessing, usa solo il selected_transcript se ready_for_agent_analysis e' true, poi genera summary.md, classification.json e analysis.json. Segnalami eventuali candidati dizionario senza promuoverli automaticamente.
+Ho inserito un video in input/videos. Riassumi l'ultimo video usando il workflow del progetto. Esegui prima la pipeline di preprocessing, usa solo il selected_transcript se ready_for_agent_analysis e' true, poi genera il Markdown primario, classification.json e analysis.json. Segnalami eventuali candidati dizionario senza promuoverli automaticamente.
 ```
 
 Per un file specifico:
@@ -61,9 +62,11 @@ output/normalization/          report di normalizzazione
 output/pipeline/               report della pipeline completa
 
 output/prompts/                generated prompt interni/debug
-output/markdown/               summary leggibili
+output/markdown/               Markdown finali leggibili
+output/markdown/*_summary.md   summary per flussi non-webinar
+output/markdown/*_detailed_notes.md Markdown primario per webinar lunghi
 output/json/                   classification e analysis JSON
-output/pdf/                    PDF esportati dai summary Markdown
+output/pdf/                    PDF esportati dal Markdown primario
 
 knowledge/global/              regole davvero trasversali
 knowledge/work_meetings/       knowledge per tutte le riunioni di lavoro
@@ -85,7 +88,7 @@ video/audio
 -> selected transcript
 -> workflow agent-driven
 -> generated_prompt.md
--> summary.md
+-> Markdown primario
 -> classification.json
 -> analysis.json
 ```
@@ -106,11 +109,11 @@ Step 4: raccolta candidati dizionario
 Step 5: selezione del transcript migliore
 Step 6A: report operativo della pipeline
 Step 6B: Codex usa il selected_transcript nel workflow agent-driven
-Step 7: export PDF deterministico da summary.md
+Step 7: export PDF deterministico dal Markdown primario
 ```
 
 Gli script non invocano Codex CLI e non generano summary/classification/analysis. Questi output finali vengono generati solo dal workflow agent-driven di Codex.
-Lo script PDF non genera contenuto: converte solo un `summary.md` gia' esistente in PDF.
+Lo script PDF non genera contenuto: converte solo un Markdown finale gia' esistente in PDF. Per webinar lunghi usa `detailed_notes.md`.
 
 ## Riassumere un video con Codex
 
@@ -202,7 +205,7 @@ Se `ready_for_agent_analysis` e' `true`, Codex puo' generare il riassunto.
 
 Se e' `false`, Codex deve fermarsi, spiegare il motivo operativo e indicare cosa revisionare.
 
-## Transcript Usato Per Il Summary
+## Transcript Usato Per L'Analisi
 
 Il sistema sceglie automaticamente il miglior transcript disponibile:
 
@@ -233,7 +236,7 @@ La pipeline puo' fermarsi se:
 - il selected transcript non esiste.
 ```
 
-In questi casi Codex non deve generare il summary finale, `classification.json` o `analysis.json`.
+In questi casi Codex non deve generare il Markdown finale, `classification.json` o `analysis.json`.
 
 ## Output Finali
 
@@ -241,7 +244,8 @@ Il workflow agent-driven produce:
 
 ```text
 output/prompts/<nome>_generated_prompt.md
-output/markdown/<nome>_summary.md
+output/markdown/<nome>_summary.md          per flussi non-webinar
+output/markdown/<nome>_detailed_notes.md   unico Markdown per webinar lunghi/round table
 output/json/<nome>_classification.json
 output/json/<nome>_analysis.json
 ```
@@ -250,7 +254,8 @@ Significato:
 
 ```text
 generated_prompt.md       artefatto interno/debug
-summary.md                riassunto leggibile e strutturato
+summary.md                riassunto leggibile per flussi non-webinar
+detailed_notes.md         documento primario per webinar lunghi, demo, round table o Q&A
 classification.json       classificazione type/subtype/recipe/context
 analysis.json             analisi strutturata in JSON
 ```
@@ -258,12 +263,13 @@ analysis.json             analisi strutturata in JSON
 Il file principale da leggere e':
 
 ```text
-output/markdown/<nome>_summary.md
+output/markdown/<nome>_summary.md          per flussi non-webinar
+output/markdown/<nome>_detailed_notes.md   per webinar lunghi/round table
 ```
 
 ## Export PDF
 
-Lo Step 7 converte un summary Markdown gia' generato in PDF usando Pandoc.
+Lo Step 7 converte un Markdown finale gia' generato in PDF usando Pandoc.
 
 Dipendenze richieste:
 
@@ -272,15 +278,16 @@ pandoc --version
 xelatex --version
 ```
 
-Lo script non installa dipendenze, non invoca Codex CLI e non modifica il contenuto del summary.
+Lo script non installa dipendenze, non invoca Codex CLI e non modifica il contenuto del Markdown sorgente.
 
 Uso da path diretto:
 
 ```bash
 python3 scripts/export_summary_pdf.py "output/markdown/NOME_BASE_summary.md" --output-dir "output/pdf"
+python3 scripts/export_summary_pdf.py "output/markdown/NOME_BASE_detailed_notes.md" --output-dir "output/pdf"
 ```
 
-Uso da basename, secondo la convenzione reale `output/markdown/<basename>_summary.md`:
+Uso da basename, secondo la convenzione reale `output/markdown/<basename>_detailed_notes.md` se presente, altrimenti `output/markdown/<basename>_summary.md`:
 
 ```bash
 python3 scripts/export_summary_pdf.py "NOME_BASE" --output-dir "output/pdf"
@@ -290,6 +297,7 @@ Output:
 
 ```text
 output/pdf/<basename>_summary.pdf
+output/pdf/<basename>_detailed_notes.pdf   quando la sorgente e' detailed_notes.md
 ```
 
 Opzioni utili:
@@ -303,12 +311,14 @@ python3 scripts/export_summary_pdf.py "NOME_BASE" --output-dir "output/pdf" --ou
 Quando l'utente chiede "genera anche il PDF", Codex deve prima generare gli output agent-driven e poi eseguire:
 
 ```bash
-python3 scripts/export_summary_pdf.py "<path/to/summary.md>" --output-dir "output/pdf"
+python3 scripts/export_summary_pdf.py "<path/to/markdown-finale.md>" --output-dir "output/pdf"
 ```
 
-## Regole Per Un Summary Pulito
+Per webinar lunghi o round table, il path deve puntare a `detailed_notes.md`, non a `summary.md`.
 
-Il summary deve basarsi solo sul transcript selezionato.
+## Regole Per Un Markdown Finale Pulito
+
+Il Markdown finale deve basarsi solo sul transcript selezionato.
 
 Non deve trattare come contenuto del video:
 
@@ -326,7 +336,7 @@ regole del progetto
 
 Questi sono operational metadata.
 
-Il summary deve:
+Il Markdown finale deve:
 
 ```text
 - non inventare;
@@ -335,6 +345,47 @@ Il summary deve:
 - usare "non specificato nella trascrizione" quando un dato manca;
 - usare "da confermare" quando qualcosa e' ambiguo;
 - considerare decisione confermata solo cio' che e' esplicito nel transcript.
+```
+
+## Webinar Lunghi
+
+Per contenuti classificati come `type: webinar` con `selected_recipe: recipes/webinar.md`, il workflow non deve comprimere tutto nella struttura generic.
+
+Per webinar lunghi, round table, demo, Q&A o contenuti con molti strumenti:
+
+```text
+detailed_notes.md   unico Markdown finale e documento principale
+analysis.json       struttura webinar-specific secondo schemas/webinar_analysis.schema.json
+```
+
+Non generare o aggiornare `summary.md` per webinar lunghi o round table. Se `summary.md` esiste da una run precedente, considerarlo legacy/stale.
+
+`detailed_notes.md` deve essere abbastanza ricco da sostituire sia il vecchio summary sia le vecchie note estese. Deve separare almeno:
+
+```text
+executive overview
+content map
+detailed thematic sections
+key concepts
+tools/platforms/assets mentioned
+demo or walkthrough notes
+examples
+frameworks or models
+audience questions
+takeaways
+applicable actions
+risks or caveats
+source limitations
+```
+
+Se un output webinar risulta troppo scarno, verificare:
+
+```text
+recipe scelta
+generated_prompt.md
+rapporto parole transcript/detailed_notes.md
+assenza di aggiornamenti a summary.md
+schema usato in analysis.json
 ```
 
 ## Context Knowledge
@@ -535,7 +586,7 @@ python3 scripts/run_preprocessing_pipeline.py "NOME_BASE" --context work_meeting
 Infine chiedi a Codex:
 
 ```text
-Ho aggiornato le regole di normalizzazione. Rigenera il summary usando il workflow del progetto e il transcript selezionato dalla pipeline.
+Ho aggiornato le regole di normalizzazione. Rigenera l'output finale usando il workflow del progetto e il transcript selezionato dalla pipeline.
 ```
 
 ## Flusso Consigliato Per Migliorare La Base Parole
@@ -543,7 +594,7 @@ Ho aggiornato le regole di normalizzazione. Rigenera il summary usando il workfl
 Dopo ogni video:
 
 ```text
-1. genera il summary normalmente;
+1. genera l'output finale normalmente;
 2. guarda i candidati raccolti;
 3. promuovi solo quelli sicuri;
 4. rifiuta quelli sbagliati;
@@ -573,7 +624,7 @@ Codex deve:
 - eseguire run_preprocessing_pipeline.py;
 - usare selected_transcript;
 - generare generated_prompt.md;
-- generare summary.md;
+- generare il Markdown primario;
 - generare classification.json;
 - generare analysis.json;
 - segnalare eventuali candidati dizionario senza promuoverli.
@@ -599,7 +650,7 @@ Codex usera':
 python3 scripts/run_preprocessing_pipeline.py --latest-video --context macro_categories/finance --json
 ```
 
-Poi generera' il summary strutturato.
+Poi generera' l'output strutturato.
 
 ## Comandi Utili
 
@@ -645,7 +696,7 @@ Listare candidati:
 python3 scripts/manage_candidates.py list --context work_meetings
 ```
 
-Esportare il summary in PDF:
+Esportare il Markdown finale in PDF:
 
 ```bash
 python3 scripts/export_summary_pdf.py "NOME_BASE" --output-dir "output/pdf"
@@ -659,8 +710,9 @@ python3 scripts/export_summary_pdf.py "NOME_BASE" --output-dir "output/pdf"
 [ ] Codex esegue run_preprocessing_pipeline.py
 [ ] La pipeline restituisce ready_for_agent_analysis = true
 [ ] Codex usa selected_transcript
-[ ] Codex genera generated_prompt.md, summary.md, classification.json, analysis.json
-[ ] Se richiesto, Codex esporta output/markdown/<nome>_summary.md in PDF
+[ ] Codex genera generated_prompt.md, Markdown primario, classification.json, analysis.json
+[ ] Per webinar lunghi il Markdown primario e' output/markdown/<nome>_detailed_notes.md
+[ ] Se richiesto, Codex esporta il Markdown primario in PDF
 [ ] Controllo eventuali candidati dizionario
 [ ] Promuovo solo correzioni sicure
 ```
@@ -683,8 +735,8 @@ video/audio
 -> preprocessing deterministico
 -> selected_transcript
 -> workflow agent-driven Codex
--> generated_prompt.md / summary.md / classification.json / analysis.json
--> PDF da summary.md solo se richiesto
+-> generated_prompt.md / Markdown primario / classification.json / analysis.json
+-> PDF dal Markdown primario solo se richiesto
 ```
 
 Nessuno script deterministico invoca Codex CLI. I candidati restano suggerimenti finche' non vengono promossi manualmente.

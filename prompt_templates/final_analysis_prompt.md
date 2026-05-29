@@ -8,6 +8,7 @@ Use this template to apply the generated prompt to a transcript and produce fina
 - Classification output path: `{{classification_output_path}}`
 - Analysis JSON output path: `{{analysis_output_path}}`
 - Markdown summary output path: `{{markdown_output_path}}`
+- Detailed notes output path: `{{detailed_notes_output_path}}`
 - Generated prompt path: `{{generated_prompt_path}}`
 - Selected recipe: `{{selected_recipe}}`
 - Classification: `{{classification}}`
@@ -41,11 +42,32 @@ Analyze the transcript using the generated prompt and the selected recipe.
 - Produce both Markdown and JSON.
 - Save the generated prompt for debug before producing the final outputs.
 - Follow the JSON schemas in `schemas/`.
-- Keep the result concise, useful and traceable to the transcript.
+- Keep the result useful and traceable to the transcript.
+- For webinar/round_table long-form content, write `detailed_notes.md` as the only Markdown deliverable. Do not create, update or request `summary.md` for this recipe. If `summary.md` already exists from a previous run, treat it as legacy/stale and do not update it.
 
 ## Required Markdown Output
 
-Write `{{markdown_output_path}}` with these sections:
+If `selected_recipe = recipes/webinar.md` or `type = webinar` and the transcript is long-form webinar/round table content, write only `{{detailed_notes_output_path}}` with webinar-specific sections:
+
+- `# Webinar Detailed Notes`
+- `## Classification`
+- `## Executive Overview`
+- `## Content Map`
+- `## Detailed Thematic Sections`
+- `## Key Concepts`
+- `## Tools, Platforms And Assets Mentioned`
+- `## Demo Or Walkthrough Notes`
+- `## Examples`
+- `## Frameworks, Models And Methodologies`
+- `## Audience Questions`
+- `## Takeaways`
+- `## Applicable Actions`
+- `## Risks Or Caveats`
+- `## Source Limitations`
+
+`detailed_notes.md` must include the executive overview inside the same document and must be rich enough to replace the old `summary.md` plus old `detailed_notes.md` pair. It must not copy or rewrite the transcript. Include tools, demos, examples, Q&A, caveats and source limitations when present.
+
+If `selected_recipe = recipes/generic.md`, write `{{markdown_output_path}}` with these generic sections:
 
 - `# Transcript Analysis`
 - `## Classification`
@@ -60,15 +82,44 @@ Write `{{markdown_output_path}}` with these sections:
 - `## Follow-ups`
 - `## Source Limitations`
 
+If `selected_recipe = recipes/meeting.md` or `recipes/technical_flow_meeting.md`, follow the selected meeting recipe and preserve its meeting-specific structure.
+
+For webinar long-form outputs, do not write `{{markdown_output_path}}`. The Markdown output path is intentionally replaced by `{{detailed_notes_output_path}}`.
+
 ## Required JSON Outputs
 
 Write `{{classification_output_path}}` following `schemas/classification.schema.json`.
 
-Write `{{analysis_output_path}}` following `schemas/generic_analysis.schema.json` unless a more specific schema is added later.
+Classification must include `selected_analysis_schema`. Use `schemas/webinar_analysis.schema.json` for webinar outputs and `schemas/generic_analysis.schema.json` for generic outputs.
+
+If `selected_recipe = recipes/webinar.md` or `type = webinar`, write `{{analysis_output_path}}` following `schemas/webinar_analysis.schema.json`.
+
+For webinar JSON, include:
+
+- `schema_version`
+- `content_type`
+- `title`
+- `executive_summary`
+- `detailed_summary`
+- `content_map`
+- `key_concepts`
+- `tools_mentioned`
+- `demos_or_walkthroughs`
+- `examples`
+- `frameworks_or_models`
+- `audience_questions`
+- `takeaways`
+- `applicable_actions`
+- `risks_or_caveats`
+- `source_limitations`
+
+If `selected_recipe = recipes/generic.md`, write `{{analysis_output_path}}` following `schemas/generic_analysis.schema.json`.
+
+If another specific recipe has a specific schema, use that schema. Otherwise follow the selected recipe structure without forcing webinar or generic fields.
 
 ## Content Contamination Check
 
-Before saving `summary.md` and `analysis.json`, verify that no project instruction or operational metadata has leaked into meeting content.
+Before saving the primary Markdown output and `analysis.json`, verify that no project instruction or operational metadata has leaked into meeting content.
 
 Do not report these as meeting decisions, facts, hypotheses, orientations, action items, risks, follow-ups or open questions:
 
@@ -100,6 +151,7 @@ Before finishing, verify that:
 - content contamination check passed;
 - missing data uses `non rilevato`;
 - Markdown and JSON were both saved;
+- for webinar long-form outputs, only `detailed_notes.md` is written as the Markdown deliverable and `summary.md` is not updated;
 - the generated prompt was saved;
 - facts and interpretations are not mixed;
 - decisions and action items are only present when supported by the transcript;
