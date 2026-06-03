@@ -1,0 +1,14 @@
+{
+  "basename": "ROUND TABLE - Intelligence Automation Assets-20260410_171441-Registrazione della riunione",
+  "context": "work_meetings",
+  "source_reports": [
+    "output/transcription/ROUND TABLE - Intelligence Automation Assets-20260410_171441-Registrazione della riunione_transcription.json",
+    "output/review/ROUND TABLE - Intelligence Automation Assets-20260410_171441-Registrazione della riunione_review.json",
+    "output/normalization/ROUND TABLE - Intelligence Automation Assets-20260410_171441-Registrazione della riunione_normalization.json"
+  ],
+  "candidate_count": 0,
+  "candidates": [],
+  "warnings": [],
+  "updated_at": "2026-06-03T14:32:27.974419+00:00",
+  "candidate_file": "knowledge/work_meetings/candidates/ROUND TABLE - Intelligence Automation Assets-20260410_171441-Registrazione della riunione_candidates.json"
+}

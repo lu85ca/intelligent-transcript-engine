@@ -20,7 +20,7 @@
       ],
       "target": "normalization_rules",
       "match": "word",
-      "status": "candidate",
+      "status": "promoted",
       "confidence": "medium",
       "notes": "Observed in AI/webinar context; possible confusion with LLM requires manual review.",
       "first_seen_in": "20260504 - 2026-05-04 11-30-09 - CORSO AI",
@@ -29,7 +29,11 @@
       ],
       "occurrences": null,
       "created_at": "2026-05-26T18:58:06.039575+00:00",
-      "updated_at": "2026-05-27T11:13:08.091616+00:00"
+      "updated_at": "2026-06-03T15:12:23.126617+00:00",
+      "promoted_to": "normalization_rules",
+      "promoted_at": "2026-06-03T15:12:23.126488+00:00",
+      "promotion_notes": "Promoted manually to normalization_rules.",
+      "promoted_rule_id": "llm_from_blm"
     },
     {
       "id": "cand_0cc72544b4",
@@ -43,7 +47,7 @@
       ],
       "target": "normalization_rules",
       "match": "word",
-      "status": "candidate",
+      "status": "promoted",
       "confidence": "medium",
       "notes": "Observed as a possible variant of Copilot; requires manual review.",
       "first_seen_in": "20260504 - 2026-05-04 11-30-09 - CORSO AI",
@@ -52,7 +56,11 @@
       ],
       "occurrences": null,
       "created_at": "2026-05-26T18:58:06.039575+00:00",
-      "updated_at": "2026-05-27T11:13:08.091618+00:00"
+      "updated_at": "2026-06-03T15:12:26.129726+00:00",
+      "promoted_to": "normalization_rules",
+      "promoted_at": "2026-06-03T15:12:26.129636+00:00",
+      "promotion_notes": "Promoted manually to normalization_rules.",
+      "promoted_rule_id": "copilot_from_coppale"
     },
     {
       "id": "cand_898ace31ba",
@@ -66,7 +74,7 @@
       ],
       "target": "normalization_rules",
       "match": "phrase",
-      "status": "candidate",
+      "status": "promoted",
       "confidence": "medium",
       "notes": "Observed as a possible variant of Copilot Chat; requires manual review.",
       "first_seen_in": "20260504 - 2026-05-04 11-30-09 - CORSO AI",
@@ -75,10 +83,14 @@
       ],
       "occurrences": null,
       "created_at": "2026-05-26T18:58:06.039575+00:00",
-      "updated_at": "2026-05-27T11:13:08.091620+00:00"
+      "updated_at": "2026-06-03T15:12:10.539625+00:00",
+      "promoted_to": "normalization_rules",
+      "promoted_at": "2026-06-03T15:12:10.539412+00:00",
+      "promotion_notes": "Promoted manually to normalization_rules.",
+      "promoted_rule_id": "copilot_chat_from_copario_chat"
     }
   ],
   "warnings": [],
-  "updated_at": "2026-05-27T11:13:08.091628+00:00",
+  "updated_at": "2026-06-03T15:12:26.129728+00:00",
   "candidate_file": "knowledge/work_meetings/candidates/20260504 - 2026-05-04 11-30-09 - CORSO AI_candidates.json"
 }

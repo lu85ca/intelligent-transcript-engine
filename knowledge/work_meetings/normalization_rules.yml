@@ -1,7 +1,31 @@
 version: 1
 scope: work_meetings
 description: "Regole conservative per riunioni di lavoro."
-rules: []
+rules:
+  - id: copilot_chat_from_copario_chat
+    enabled: true
+    observed:
+      - "Copario Chat"
+    canonical: "Copilot Chat"
+    match: "phrase"
+    case_sensitive: false
+    notes: "Promoted manually from candidate cand_898ace31ba."
+  - id: llm_from_blm
+    enabled: true
+    observed:
+      - "BLM"
+    canonical: "LLM"
+    match: "word"
+    case_sensitive: false
+    notes: "Promoted manually from candidate cand_6b32eaa1b1."
+  - id: copilot_from_coppale
+    enabled: true
+    observed:
+      - "Coppale"
+    canonical: "Copilot"
+    match: "word"
+    case_sensitive: false
+    notes: "Promoted manually from candidate cand_0cc72544b4."
 notes:
   - "Le regole valgono per tutte le riunioni di lavoro, indipendentemente dal dominio specifico."
   - "Termini come IMU, TARI, SIGE, Libra, STARDAS e DoQui Acta, se approvati, appartengono a questo contesto unico."

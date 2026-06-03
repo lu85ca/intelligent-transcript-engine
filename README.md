@@ -205,6 +205,54 @@ Se `ready_for_agent_analysis` e' `true`, Codex puo' generare il riassunto.
 
 Se e' `false`, Codex deve fermarsi, spiegare il motivo operativo e indicare cosa revisionare.
 
+## Trascrizione Batch In Background
+
+Per webinar lunghi, la trascrizione MLX puo' richiedere molto tempo. Quando chiedi a Codex di elaborare nuovi video e mancano ancora i raw transcript, Codex deve avviare solo la trascrizione batch in background e poi fermarsi.
+
+Comando:
+
+```bash
+python3 scripts/start_transcription_batch.py
+```
+
+Output atteso:
+
+```text
+status: started
+pid: <PID>
+log: output/transcription/transcribe_remaining.log
+pending_count: <N>
+```
+
+Controllare se il processo e' ancora attivo:
+
+```bash
+ps -p <PID> -o pid,etime,pcpu,pmem,command
+```
+
+Seguire il log:
+
+```bash
+tail -n 40 output/transcription/transcribe_remaining.log
+```
+
+Vedere quali audio sono stati trascritti:
+
+```bash
+python3 - <<'PY'
+from pathlib import Path
+for audio in sorted(Path('input/audio').glob('*.wav')):
+    raw = Path('input/transcripts/raw') / f'{audio.stem}_raw.md'
+    print(('DONE' if raw.exists() else 'TODO'), '|', audio.name)
+PY
+```
+
+Quando la trascrizione e' terminata, invia a Codex:
+
+```text
+La trascrizione batch e' terminata. Prosegui con review, normalizzazione, selezione transcript, generazione detailed_notes/classification/analysis e PDF per i nuovi video completati.
+```
+
 ## Transcript Usato Per L'Analisi
 
 Il sistema sceglie automaticamente il miglior transcript disponibile:

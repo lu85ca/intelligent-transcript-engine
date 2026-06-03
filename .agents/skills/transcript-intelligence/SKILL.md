@@ -18,6 +18,7 @@ Use this skill when Codex is asked to analyze a transcript in `input/transcripts
 - Operational metadata must not appear as a source or justification in final content, including `interpretations` and domain normalization explanations.
 - Candidate suggestions are not approved terms or active normalization rules. Do not apply candidates unless they have been manually promoted into approved knowledge files.
 - For video/audio requests such as "riassumi questo video", "ho messo un video in input/videos" or "analizza l'ultimo video", run the deterministic Step 6A preprocessing runner first.
+- For requests to process newly uploaded videos when raw transcripts are missing, do not stay in chat while MLX Whisper runs. Start background transcription with `python3 scripts/start_transcription_batch.py`, report PID/log/check commands and stop. The user will send a new message when transcription is complete.
 - If the Step 6A pipeline report has `ready_for_agent_analysis: false`, stop and ask for review instead of producing final summary, analysis or classification.
 - If the Step 6A pipeline report is ready, use only `selected_transcript` as source content for the agent-driven workflow.
 - If the user asks for a PDF, generate the Markdown/JSON outputs first, then run Step 7 with `scripts/export_summary_pdf.py` on the generated primary Markdown.
@@ -40,28 +41,30 @@ Use this skill when Codex is asked to analyze a transcript in `input/transcripts
 
 1. Read `AGENTS.md`.
 2. Read this skill file.
-3. For video/audio or unprepared inputs, run Step 6A with `scripts/run_preprocessing_pipeline.py`.
-4. For generic requests about the latest uploaded video, use `--latest-video` when the input is unambiguous enough; otherwise ask which file to use.
-5. Read the Step 6A pipeline report.
-6. If `ready_for_agent_analysis` is false, stop and ask for review/manual verification without producing final summary, analysis or classification.
-7. Select the analysis transcript from `selected_transcript`, or with the project policy: normalized > reviewed > raw safe.
-8. Read only the selected transcript from `input/transcripts/` as source content.
-9. Lightly clean the transcript mentally: remove obvious noise, normalize spacing and preserve meaning.
-10. Classify the content with `type` and, when useful, `subtype`.
-11. Select the most suitable recipe from `recipes/`.
-12. If the transcript clearly matches a domain profile, read the relevant file from `domain_profiles/`.
-13. Read `prompt_templates/meta_prompt.md`.
-14. Read `prompt_templates/final_analysis_prompt.md`.
-15. Generate the optimized final prompt for the selected transcript.
-16. Save it as `output/prompts/<name>_generated_prompt.md`.
-17. Apply the generated prompt to the selected transcript.
-18. Save the primary Markdown output. For generic/meeting/youtube flows this is usually `output/markdown/<name>_summary.md`; for long webinars or round tables this is only `output/markdown/<name>_detailed_notes.md`.
-19. Save JSON analysis to `output/json/<name>_analysis.json`.
-20. Save JSON classification to `output/json/<name>_classification.json`.
-21. For long webinars or round tables, do not create or update `output/markdown/<name>_summary.md`.
-22. If the user requested PDF export, run `python3 scripts/export_summary_pdf.py "<primary markdown path>" --output-dir "output/pdf"` unless the user requested a different output directory. For long webinars, the primary markdown path is `output/markdown/<name>_detailed_notes.md`.
-23. If `candidate_count > 0`, mention candidates only in a separate operational note after the final outputs and suggest `python3 scripts/manage_candidates.py list --context <context>`.
-24. Run a final quality check.
+3. For video/audio or unprepared inputs, first check whether raw transcripts already exist.
+4. If raw transcripts are missing for newly uploaded videos, run `python3 scripts/start_transcription_batch.py`, provide the PID, log path, check commands and the exact follow-up message, then stop.
+5. After the user confirms transcription is complete, run Step 6A with `scripts/run_preprocessing_pipeline.py`.
+6. For generic requests about the latest uploaded video, use `--latest-video` when the input is unambiguous enough; otherwise ask which file to use.
+7. Read the Step 6A pipeline report.
+8. If `ready_for_agent_analysis` is false, stop and ask for review/manual verification without producing final summary, analysis or classification.
+9. Select the analysis transcript from `selected_transcript`, or with the project policy: normalized > reviewed > raw safe.
+10. Read only the selected transcript from `input/transcripts/` as source content.
+11. Lightly clean the transcript mentally: remove obvious noise, normalize spacing and preserve meaning.
+12. Classify the content with `type` and, when useful, `subtype`.
+13. Select the most suitable recipe from `recipes/`.
+14. If the transcript clearly matches a domain profile, read the relevant file from `domain_profiles/`.
+15. Read `prompt_templates/meta_prompt.md`.
+16. Read `prompt_templates/final_analysis_prompt.md`.
+17. Generate the optimized final prompt for the selected transcript.
+18. Save it as `output/prompts/<name>_generated_prompt.md`.
+19. Apply the generated prompt to the selected transcript.
+20. Save the primary Markdown output. For generic/meeting/youtube flows this is usually `output/markdown/<name>_summary.md`; for long webinars or round tables this is only `output/markdown/<name>_detailed_notes.md`.
+21. Save JSON analysis to `output/json/<name>_analysis.json`.
+22. Save JSON classification to `output/json/<name>_classification.json`.
+23. For long webinars or round tables, do not create or update `output/markdown/<name>_summary.md`.
+24. If the user requested PDF export, run `python3 scripts/export_summary_pdf.py "<primary markdown path>" --output-dir "output/pdf"` unless the user requested a different output directory. For long webinars, the primary markdown path is `output/markdown/<name>_detailed_notes.md`.
+25. If `candidate_count > 0`, mention candidates only in a separate operational note after the final outputs and suggest `python3 scripts/manage_candidates.py list --context <context>`.
+26. Run a final quality check.
 
 ## Classification
 

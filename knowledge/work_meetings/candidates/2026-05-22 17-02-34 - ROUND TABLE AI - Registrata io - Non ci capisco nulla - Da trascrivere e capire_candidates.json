@@ -1,0 +1,14 @@
+{
+  "basename": "2026-05-22 17-02-34 - ROUND TABLE AI - Registrata io - Non ci capisco nulla - Da trascrivere e capire",
+  "context": "work_meetings",
+  "source_reports": [
+    "output/transcription/2026-05-22 17-02-34 - ROUND TABLE AI - Registrata io - Non ci capisco nulla - Da trascrivere e capire_transcription.json",
+    "output/review/2026-05-22 17-02-34 - ROUND TABLE AI - Registrata io - Non ci capisco nulla - Da trascrivere e capire_review.json",
+    "output/normalization/2026-05-22 17-02-34 - ROUND TABLE AI - Registrata io - Non ci capisco nulla - Da trascrivere e capire_normalization.json"
+  ],
+  "candidate_count": 0,
+  "candidates": [],
+  "warnings": [],
+  "updated_at": "2026-06-03T14:32:25.773371+00:00",
+  "candidate_file": "knowledge/work_meetings/candidates/2026-05-22 17-02-34 - ROUND TABLE AI - Registrata io - Non ci capisco nulla - Da trascrivere e capire_candidates.json"
+}
