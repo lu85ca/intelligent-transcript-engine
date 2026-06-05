@@ -56,7 +56,7 @@ La gestione dei candidati di Step 4 e' separata dalle regole approvate: `knowled
 
 Quando l'utente chiede di riassumere un video/audio o un contenuto non ancora preparato, eseguire prima Step 6A con `scripts/run_preprocessing_pipeline.py`. Se il pipeline report contiene `ready_for_agent_analysis: true`, usare solo `selected_transcript` come contenuto sorgente dell'analisi agent-driven. Se contiene `requires_manual_review: true` o `pipeline_status: failed`, fermarsi e spiegare l'azione richiesta senza generare Markdown finale, classification o analysis. Il pipeline report e' operational metadata.
 
-Quando l'utente chiede di elaborare nuovi video e i raw transcript non esistono ancora, non restare in chat durante la trascrizione MLX lunga. Avvia invece la trascrizione batch in background con `python3 scripts/start_transcription_batch.py`, comunica PID, log, comandi di verifica e fermati. L'utente riprendera' con un nuovo messaggio quando il processo e' terminato. Nel messaggio di ripresa suggerire: "La trascrizione batch e' terminata. Prosegui con review, normalizzazione, selezione transcript, generazione detailed_notes/classification/analysis e PDF per i nuovi video completati."
+Quando l'utente chiede di elaborare nuovi video e i raw transcript non esistono ancora, la regola e' vincolante: non avviare direttamente `scripts/transcribe_audio_mlx.py`, non usare `scripts/process_videos.sh` per restare agganciato alla trascrizione, non fare polling del processo e non attendere in chat il completamento di MLX Whisper. Avvia solo la trascrizione batch in background con `python3 scripts/start_transcription_batch.py`, comunica PID, log, comandi di verifica e fermati subito. Dopo questo messaggio non eseguire altri tool call per monitorare la trascrizione, salvo richiesta esplicita dell'utente. L'utente riprendera' con un nuovo messaggio quando il processo e' terminato. Nel messaggio di ripresa suggerire: "La trascrizione batch e' terminata. Prosegui con review, normalizzazione, selezione transcript, generazione detailed_notes/classification/analysis e PDF per i nuovi video completati."
 
 Per richieste generiche come "ho messo un video in input/videos" o "analizza l'ultimo video", usare `--latest-video` se la richiesta non indica un file specifico. Se ci sono più input plausibili e scegliere l'ultimo non e' ragionevole dal contesto, chiedere quale file usare. Il context default e' `work_meetings`; usare macro-categorie solo quando l'utente le indica o il contenuto e' chiaramente non-meeting.
 
@@ -148,28 +148,30 @@ Per ogni trascrizione in `input/transcripts/`, Codex deve:
 
 1. Leggere questo file `AGENTS.md`.
 2. Usare la skill `.agents/skills/transcript-intelligence/SKILL.md`.
-3. Per video/audio o input non ancora preparati, eseguire Step 6A con `scripts/run_preprocessing_pipeline.py` e leggere il pipeline report.
-4. Se `ready_for_agent_analysis` e' `false`, fermarsi e chiedere review/verifica manuale senza produrre output finali.
-5. Selezionare il transcript da analizzare con priorita' `normalized > reviewed > raw safe`, usando `selected_transcript` del pipeline report quando disponibile.
-6. Se la policy restituisce `requires_review`, fermarsi e chiedere review/verifica manuale senza produrre output finali.
-7. Leggere solo la trascrizione selezionata come contenuto sorgente.
-8. Classificare il tipo di contenuto con `type`, `subtype`, `confidence`, `secondary_type`, `selected_recipe`, `selected_analysis_schema`, `selected_domain_profile`, `signals` e `reason`.
-9. Scegliere la recipe piu' adatta da `recipes/`.
-10. Selezionare il knowledge context seguendo `knowledge/registry.yml`.
-11. Per riunioni di lavoro, usare sempre `knowledge/global/` e `knowledge/work_meetings/`.
-12. Per contenuti non-meeting, usare `knowledge/global/` e una macro-categoria in `knowledge/macro_categories/`, oppure `generic` come fallback.
-13. Se strettamente pertinente e gia' previsto dal progetto, scegliere un domain profile da `domain_profiles/` e dichiararlo nella classification; non creare nuovi domain profile granulari.
-14. Leggere `prompt_templates/meta_prompt.md` e `prompt_templates/final_analysis_prompt.md`.
-15. Generare un prompt ottimizzato per la trascrizione selezionata.
-16. Salvare il prompt in `output/prompts/<nome>_generated_prompt.md`.
-17. Applicare il prompt alla trascrizione selezionata.
-18. Salvare la classificazione in `output/json/<nome>_classification.json`.
-19. Salvare l'analisi strutturata in `output/json/<nome>_analysis.json`.
-20. Salvare il Markdown primario: per contenuti non-webinar normalmente `output/markdown/<nome>_summary.md`; per webinar lunghi o round table solo `output/markdown/<nome>_detailed_notes.md`.
-21. Per webinar lunghi o round table, non aggiornare `summary.md` anche se esiste da run precedenti.
-22. Se richiesto dall'utente, esportare il Markdown primario in PDF con `python3 scripts/export_summary_pdf.py "<path/to/markdown.md>" --output-dir "output/pdf"`.
-23. Se ci sono candidati, segnalarli solo come nota operativa separata dagli output finali.
-24. Fare un controllo qualita' finale su completezza, tracciabilita', assenza di invenzioni e rispetto degli schemi.
+3. Per video/audio o input non ancora preparati, verificare prima se esistono raw transcript. Se mancano, avviare solo `python3 scripts/start_transcription_batch.py`, comunicare PID/log/comandi di verifica e fermarsi subito senza monitorare.
+4. Dopo il messaggio di stop per trascrizione batch, non proseguire con Step 6A, review, normalizzazione o output finali finche' l'utente non conferma in un nuovo messaggio che la trascrizione e' terminata.
+5. Quando i raw transcript esistono o l'utente conferma il completamento, eseguire Step 6A con `scripts/run_preprocessing_pipeline.py` e leggere il pipeline report.
+6. Se `ready_for_agent_analysis` e' `false`, fermarsi e chiedere review/verifica manuale senza produrre output finali.
+7. Selezionare il transcript da analizzare con priorita' `normalized > reviewed > raw safe`, usando `selected_transcript` del pipeline report quando disponibile.
+8. Se la policy restituisce `requires_review`, fermarsi e chiedere review/verifica manuale senza produrre output finali.
+9. Leggere solo la trascrizione selezionata come contenuto sorgente.
+10. Classificare il tipo di contenuto con `type`, `subtype`, `confidence`, `secondary_type`, `selected_recipe`, `selected_analysis_schema`, `selected_domain_profile`, `signals` e `reason`.
+11. Scegliere la recipe piu' adatta da `recipes/`.
+12. Selezionare il knowledge context seguendo `knowledge/registry.yml`.
+13. Per riunioni di lavoro, usare sempre `knowledge/global/` e `knowledge/work_meetings/`.
+14. Per contenuti non-meeting, usare `knowledge/global/` e una macro-categoria in `knowledge/macro_categories/`, oppure `generic` come fallback.
+15. Se strettamente pertinente e gia' previsto dal progetto, scegliere un domain profile da `domain_profiles/` e dichiararlo nella classification; non creare nuovi domain profile granulari.
+16. Leggere `prompt_templates/meta_prompt.md` e `prompt_templates/final_analysis_prompt.md`.
+17. Generare un prompt ottimizzato per la trascrizione selezionata.
+18. Salvare il prompt in `output/prompts/<nome>_generated_prompt.md`.
+19. Applicare il prompt alla trascrizione selezionata.
+20. Salvare la classificazione in `output/json/<nome>_classification.json`.
+21. Salvare l'analisi strutturata in `output/json/<nome>_analysis.json`.
+22. Salvare il Markdown primario: per contenuti non-webinar normalmente `output/markdown/<nome>_summary.md`; per webinar lunghi o round table solo `output/markdown/<nome>_detailed_notes.md`.
+23. Per webinar lunghi o round table, non aggiornare `summary.md` anche se esiste da run precedenti.
+24. Se richiesto dall'utente, esportare il Markdown primario in PDF con `python3 scripts/export_summary_pdf.py "<path/to/markdown.md>" --output-dir "output/pdf"`.
+25. Se ci sono candidati, segnalarli solo come nota operativa separata dagli output finali.
+26. Fare un controllo qualita' finale su completezza, tracciabilita', assenza di invenzioni e rispetto degli schemi.
 
 ## Output atteso
 

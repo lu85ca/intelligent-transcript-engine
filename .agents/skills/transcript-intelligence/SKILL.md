@@ -18,7 +18,7 @@ Use this skill when Codex is asked to analyze a transcript in `input/transcripts
 - Operational metadata must not appear as a source or justification in final content, including `interpretations` and domain normalization explanations.
 - Candidate suggestions are not approved terms or active normalization rules. Do not apply candidates unless they have been manually promoted into approved knowledge files.
 - For video/audio requests such as "riassumi questo video", "ho messo un video in input/videos" or "analizza l'ultimo video", run the deterministic Step 6A preprocessing runner first.
-- For requests to process newly uploaded videos when raw transcripts are missing, do not stay in chat while MLX Whisper runs. Start background transcription with `python3 scripts/start_transcription_batch.py`, report PID/log/check commands and stop. The user will send a new message when transcription is complete.
+- For requests to process newly uploaded videos when raw transcripts are missing, this is mandatory: do not run `scripts/transcribe_audio_mlx.py` directly, do not use a foreground `scripts/process_videos.sh` run, do not poll the process, and do not stay in chat while MLX Whisper runs. Start background transcription with `python3 scripts/start_transcription_batch.py`, report PID/log/check commands and stop immediately. Do not make further tool calls to monitor transcription unless the user explicitly asks. The user will send a new message when transcription is complete.
 - If the Step 6A pipeline report has `ready_for_agent_analysis: false`, stop and ask for review instead of producing final summary, analysis or classification.
 - If the Step 6A pipeline report is ready, use only `selected_transcript` as source content for the agent-driven workflow.
 - If the user asks for a PDF, generate the Markdown/JSON outputs first, then run Step 7 with `scripts/export_summary_pdf.py` on the generated primary Markdown.
@@ -42,8 +42,8 @@ Use this skill when Codex is asked to analyze a transcript in `input/transcripts
 1. Read `AGENTS.md`.
 2. Read this skill file.
 3. For video/audio or unprepared inputs, first check whether raw transcripts already exist.
-4. If raw transcripts are missing for newly uploaded videos, run `python3 scripts/start_transcription_batch.py`, provide the PID, log path, check commands and the exact follow-up message, then stop.
-5. After the user confirms transcription is complete, run Step 6A with `scripts/run_preprocessing_pipeline.py`.
+4. If raw transcripts are missing for newly uploaded videos, run only `python3 scripts/start_transcription_batch.py`, provide the PID, log path, check commands and the exact follow-up message, then stop immediately. Do not monitor, poll or continue to Step 6A in the same turn.
+5. After the user confirms transcription is complete in a later message, run Step 6A with `scripts/run_preprocessing_pipeline.py`.
 6. For generic requests about the latest uploaded video, use `--latest-video` when the input is unambiguous enough; otherwise ask which file to use.
 7. Read the Step 6A pipeline report.
 8. If `ready_for_agent_analysis` is false, stop and ask for review/manual verification without producing final summary, analysis or classification.

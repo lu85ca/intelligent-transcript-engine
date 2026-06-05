@@ -207,7 +207,16 @@ Se e' `false`, Codex deve fermarsi, spiegare il motivo operativo e indicare cosa
 
 ## Trascrizione Batch In Background
 
-Per webinar lunghi, la trascrizione MLX puo' richiedere molto tempo. Quando chiedi a Codex di elaborare nuovi video e mancano ancora i raw transcript, Codex deve avviare solo la trascrizione batch in background e poi fermarsi.
+Per webinar lunghi, la trascrizione MLX puo' richiedere molto tempo. Quando chiedi a Codex di elaborare nuovi video e mancano ancora i raw transcript, Codex deve avviare solo la trascrizione batch in background e poi fermarsi subito.
+
+Questa e' una regola forte del progetto:
+
+```text
+Codex non deve lanciare transcribe_audio_mlx.py direttamente.
+Codex non deve restare in chat ad aspettare la fine di MLX Whisper.
+Codex non deve fare polling o monitoraggio del processo dopo l'avvio.
+Codex deve usare start_transcription_batch.py, comunicare PID/log/comandi di verifica e fermarsi.
+```
 
 Comando:
 

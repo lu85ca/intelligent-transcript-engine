@@ -1,0 +1,14 @@
+{
+  "basename": "Come FILTRO Le Mie Azioni per INVESTIRE",
+  "context": "macro_categories/finance",
+  "source_reports": [
+    "output/transcription/Come FILTRO Le Mie Azioni per INVESTIRE_transcription.json",
+    "output/review/Come FILTRO Le Mie Azioni per INVESTIRE_review.json",
+    "output/normalization/Come FILTRO Le Mie Azioni per INVESTIRE_normalization.json"
+  ],
+  "candidate_count": 0,
+  "candidates": [],
+  "warnings": [],
+  "updated_at": "2026-06-05T18:27:11.620515+00:00",
+  "candidate_file": "knowledge/macro_categories/finance/candidates/Come FILTRO Le Mie Azioni per INVESTIRE_candidates.json"
+}
