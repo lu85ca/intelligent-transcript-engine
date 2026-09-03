@@ -5,7 +5,7 @@ manual_candidate_promotion: true
 
 preprocessing_architecture:
   audio_video_pipeline: "planned_local_script_driven"
-  transcription_model: "MLX Whisper large-v3-turbo"
+  transcription_model: "OpenAI Whisper local large-v3 (CPU)"
   deterministic_steps:
     - "estrazione audio"
     - "trascrizione"

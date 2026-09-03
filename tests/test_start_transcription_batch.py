@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
 SPEC = importlib.util.spec_from_file_location(
     "start_transcription_batch",
     ROOT / "scripts" / "start_transcription_batch.py",
@@ -64,7 +65,10 @@ class StartTranscriptionBatchTests(unittest.TestCase):
             root = Path(tmp)
             self.write_audio(root, "todo", raw=False)
 
-            with patch.object(start_transcription_batch.subprocess, "Popen", return_value=FakeProcess(24680)):
+            configured_python = Path("/configured/openai-whisper/bin/python3")
+            with patch.object(start_transcription_batch, "validate_whisper_runtime", return_value=configured_python), patch.object(
+                start_transcription_batch.subprocess, "Popen", return_value=FakeProcess(24680)
+            ) as popen:
                 report, code = start_transcription_batch.start_batch(self.args(), root)
 
             self.assertEqual(code, 0)
@@ -73,6 +77,25 @@ class StartTranscriptionBatchTests(unittest.TestCase):
             self.assertTrue((root / "output" / "transcription" / "test_batch.pid").exists())
             self.assertIn("check_process", report["commands_to_check"])
             self.assertIn("next_message_to_codex", report)
+            self.assertEqual(popen.call_args.args[0][0], str(configured_python))
+            self.assertIn("transcribe_audio_whisper.py", popen.call_args.args[0][1])
+
+    def test_runtime_failure_does_not_start_or_fall_back_to_system_python(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_audio(root, "todo", raw=False)
+
+            with patch.object(
+                start_transcription_batch,
+                "validate_whisper_runtime",
+                side_effect=RuntimeError("model is missing; no download was attempted"),
+            ), patch.object(start_transcription_batch.subprocess, "Popen") as popen:
+                report, code = start_transcription_batch.start_batch(self.args(), root)
+
+            self.assertEqual(code, 1)
+            self.assertEqual(report["status"], "runtime_unavailable")
+            self.assertIn("no download was attempted", report["notes"][-1])
+            popen.assert_not_called()
 
     def test_existing_running_process_is_not_started_again(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

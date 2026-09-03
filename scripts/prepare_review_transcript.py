@@ -15,7 +15,7 @@ RAW_SUFFIX = "_raw.md"
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Create a reviewed transcript draft from a raw MLX Whisper transcript."
+        description="Create a reviewed transcript draft from a raw local OpenAI Whisper transcript."
     )
     parser.add_argument("raw_transcript", help="Path to input/transcripts/raw/<basename>_raw.md")
     parser.add_argument(

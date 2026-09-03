@@ -14,7 +14,7 @@ from difflib import SequenceMatcher
 from typing import Any
 
 
-DEFAULT_MODEL = "mlx-community/whisper-large-v3-turbo"
+DEFAULT_MODEL = "large-v3"
 DEFAULT_LANGUAGE = "it"
 INTRO_WINDOW_SECONDS = 180.0
 SHORT_PHRASE_MAX_WORDS = 8
@@ -23,7 +23,7 @@ REPEATED_PHRASE_MIN_RUN = 4
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Transcribe WAV audio files with MLX Whisper into raw Markdown transcripts."
+        description="Transcribe WAV audio files with local OpenAI Whisper into raw Markdown transcripts."
     )
     parser.add_argument(
         "audio",
@@ -33,7 +33,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model",
         default=DEFAULT_MODEL,
-        help=f"MLX Whisper model to use. Default: {DEFAULT_MODEL}",
+        help=f"Local OpenAI Whisper model to use. Default: {DEFAULT_MODEL}",
     )
     parser.add_argument(
         "--language",
@@ -362,7 +362,7 @@ def technical_report(
         "status": status,
         "source_audio": rel(audio_path, root),
         "output_transcript": rel(transcript_path, root),
-        "transcription_engine": "mlx-whisper",
+        "transcription_engine": "openai-whisper",
         "transcription_model": model,
         "language": language,
         "force": force,
@@ -389,7 +389,7 @@ def skipped_existing_report(
         "status": "skipped_existing",
         "source_audio": rel(audio_path, root),
         "output_transcript": rel(transcript_path, root),
-        "transcription_engine": "mlx-whisper",
+        "transcription_engine": "openai-whisper",
         "transcription_model": model,
         "language": language,
         "force": force,
@@ -423,7 +423,7 @@ def write_markdown(
         "---\n"
         "source_type: video_or_audio\n"
         f"source_audio: {frontmatter_value(rel(audio_path, root))}\n"
-        "transcription_engine: mlx-whisper\n"
+        "transcription_engine: openai-whisper\n"
         f"transcription_model: {frontmatter_value(model)}\n"
         f"language: {frontmatter_value(language)}\n"
         "status: raw_transcript\n"
@@ -442,14 +442,15 @@ def collect_audio_files(root: Path, audio_arg: str | None) -> list[Path]:
     return sorted(audio_dir.glob("*.wav"))
 
 
-def import_mlx_whisper():
+def import_openai_whisper():
     try:
-        import mlx_whisper  # type: ignore
+        import whisper  # type: ignore
     except ImportError as exc:
         raise RuntimeError(
-            "Missing dependency: mlx_whisper. Install it in a Python venv with `pip install mlx-whisper`."
+            "OpenAI Whisper is unavailable in this interpreter. Use the configured local Whisper runtime; "
+            "no installation or download was attempted."
         ) from exc
-    return mlx_whisper
+    return whisper
 
 
 def transcribe_one(
@@ -507,7 +508,15 @@ def transcribe_one(
         return True
 
     try:
-        mlx_whisper = import_mlx_whisper()
+        from whisper_runtime import local_model_path
+
+        model_path = local_model_path(model)
+        if not model_path.is_file():
+            raise RuntimeError(
+                f"OpenAI Whisper local model '{model}' is missing from cache: {model_path}. "
+                "No download was attempted."
+            )
+        whisper = import_openai_whisper()
     except RuntimeError as exc:
         write_json(
             report_path,
@@ -527,10 +536,15 @@ def transcribe_one(
 
     print(f"Transcribing: {rel(audio_path, root)}")
     try:
-        result = mlx_whisper.transcribe(
+        model_instance = whisper.load_model(
+            model,
+            device="cpu",
+            download_root=str(model_path.parent),
+        )
+        result = model_instance.transcribe(
             str(audio_path),
-            path_or_hf_repo=model,
             language=language,
+            fp16=False,
         )
     except Exception as exc:  # noqa: BLE001 - report external transcription failures clearly.
         write_json(
@@ -543,7 +557,7 @@ def transcribe_one(
                 language=language,
                 status="error",
                 force=force,
-                message=f"MLX Whisper transcription failed: {exc}",
+                message=f"OpenAI Whisper local transcription failed: {exc}",
             ),
         )
         print(f"Failed to transcribe {rel(audio_path, root)}: {exc}", file=sys.stderr)

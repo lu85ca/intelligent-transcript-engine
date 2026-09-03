@@ -11,17 +11,19 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from whisper_runtime import resolve_whisper_python, validate_whisper_runtime
+
 
 DEFAULT_LOG = "output/transcription/transcribe_remaining.log"
 DEFAULT_PID = "output/transcription/transcribe_remaining.pid"
-MSG_NO_CODEX = "This launcher starts deterministic MLX transcription only and does not invoke Codex CLI."
+MSG_NO_CODEX = "This launcher starts deterministic local OpenAI Whisper transcription only and does not invoke Codex CLI."
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Start MLX Whisper batch transcription in the background.")
+    parser = argparse.ArgumentParser(description="Start local OpenAI Whisper batch transcription in the background.")
     parser.add_argument("--log", default=DEFAULT_LOG, help=f"Log file path. Default: {DEFAULT_LOG}.")
     parser.add_argument("--pid-file", default=DEFAULT_PID, help=f"PID file path. Default: {DEFAULT_PID}.")
-    parser.add_argument("--force", action="store_true", help="Pass --force to transcribe_audio_mlx.py.")
+    parser.add_argument("--force", action="store_true", help="Pass --force to transcribe_audio_whisper.py.")
     parser.add_argument("--json", action="store_true", help="Print a JSON report.")
     parser.add_argument("--dry-run", action="store_true", help="Show pending audio files without starting transcription.")
     return parser.parse_args()
@@ -84,7 +86,7 @@ def pending_audio(root: Path, force: bool) -> list[Path]:
 
 
 def build_command(root: Path, force: bool) -> list[str]:
-    command = [sys.executable, (root / "scripts" / "transcribe_audio_mlx.py").as_posix()]
+    command = [str(validate_whisper_runtime()), (root / "scripts" / "transcribe_audio_whisper.py").as_posix()]
     if force:
         command.append("--force")
     return command
@@ -119,7 +121,9 @@ def start_batch(args: argparse.Namespace, root: Path) -> tuple[dict[str, Any], i
         "force": args.force,
         "pending_count": len(pending),
         "pending_audio": [rel(path, root) for path in pending],
-        "command": command_for_report(build_command(root, args.force), root),
+        "command": command_for_report(
+            [str(resolve_whisper_python()), (root / "scripts" / "transcribe_audio_whisper.py").as_posix()], root
+        ),
         "created_at": now_iso(),
         "notes": [MSG_NO_CODEX],
     }
@@ -147,11 +151,17 @@ def start_batch(args: argparse.Namespace, root: Path) -> tuple[dict[str, Any], i
         report["status"] = "nothing_to_transcribe"
         return report, 0
 
+    try:
+        command = build_command(root, args.force)
+    except RuntimeError as exc:
+        report.update({"status": "runtime_unavailable", "command": None, "notes": [MSG_NO_CODEX, str(exc)]})
+        return report, 1
+
     log_path.parent.mkdir(parents=True, exist_ok=True)
     pid_file.parent.mkdir(parents=True, exist_ok=True)
     log_handle = log_path.open("ab", buffering=0)
     process = subprocess.Popen(
-        build_command(root, args.force),
+        command,
         cwd=root,
         stdin=subprocess.DEVNULL,
         stdout=log_handle,

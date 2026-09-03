@@ -2,7 +2,7 @@
 
 Questo progetto analizza trascrizioni testuali con un workflow agent-driven. Codex legge trascrizione, regole, skill, recipe, template, schemi e knowledge context, poi genera direttamente prompt di debug, output Markdown e output JSON.
 
-Il progetto puo' avere una pipeline locale di preprocessing video/audio basata su MLX Whisper large-v3-turbo. Questa pipeline deve restare deterministica e script-driven: prepara audio, trascrizione, normalizzazioni conservative e log tecnici. Classificazione, scelta recipe, generated prompt, summary, classification JSON e analysis JSON restano agent-driven.
+Il progetto puo' avere una pipeline locale di preprocessing video/audio basata su OpenAI Whisper locale large-v3 su CPU. Questa pipeline deve restare deterministica e script-driven: prepara audio, trascrizione, normalizzazioni conservative e log tecnici. Classificazione, scelta recipe, generated prompt, summary, classification JSON e analysis JSON restano agent-driven.
 
 ## Regole fondamentali
 
@@ -37,7 +37,7 @@ Il progetto puo' avere una pipeline locale di preprocessing video/audio basata s
 La pipeline di preprocessing video/audio deve seguire questi confini:
 
 - estrazione audio, trascrizione e normalizzazione conservativa sono preprocessing deterministico/script-driven;
-- il modello di trascrizione previsto e' MLX Whisper large-v3-turbo;
+- il modello di trascrizione previsto e' OpenAI Whisper locale large-v3 su CPU;
 - gli script preparano input e log tecnici;
 - gli script non analizzano semanticamente il contenuto;
 - gli script di preprocessing non invocano Codex;
@@ -56,7 +56,7 @@ La gestione dei candidati di Step 4 e' separata dalle regole approvate: `knowled
 
 Quando l'utente chiede di riassumere un video/audio o un contenuto non ancora preparato, eseguire prima Step 6A con `scripts/run_preprocessing_pipeline.py`. Se il pipeline report contiene `ready_for_agent_analysis: true`, usare solo `selected_transcript` come contenuto sorgente dell'analisi agent-driven. Se contiene `requires_manual_review: true` o `pipeline_status: failed`, fermarsi e spiegare l'azione richiesta senza generare Markdown finale, classification o analysis. Il pipeline report e' operational metadata.
 
-Quando l'utente chiede di elaborare nuovi video e i raw transcript non esistono ancora, la regola e' vincolante: non avviare direttamente `scripts/transcribe_audio_mlx.py`, non usare `scripts/process_videos.sh` per restare agganciato alla trascrizione, non fare polling del processo e non attendere in chat il completamento di MLX Whisper. Avvia solo la trascrizione batch in background con `python3 scripts/start_transcription_batch.py`, comunica PID, log, comandi di verifica e fermati subito. Dopo questo messaggio non eseguire altri tool call per monitorare la trascrizione, salvo richiesta esplicita dell'utente. L'utente riprendera' con un nuovo messaggio quando il processo e' terminato. Nel messaggio di ripresa suggerire: "La trascrizione batch e' terminata. Prosegui con review, normalizzazione, selezione transcript, generazione detailed_notes/classification/analysis e PDF per i nuovi video completati."
+Quando l'utente chiede di elaborare nuovi video e i raw transcript non esistono ancora, la regola e' vincolante: non avviare direttamente `scripts/transcribe_audio_whisper.py`, non usare `scripts/process_videos.sh` per restare agganciato alla trascrizione, non fare polling del processo e non attendere in chat il completamento di OpenAI Whisper locale. Avvia solo la trascrizione batch in background con `python3 scripts/start_transcription_batch.py`, comunica PID, log, comandi di verifica e fermati subito. Dopo questo messaggio non eseguire altri tool call per monitorare la trascrizione, salvo richiesta esplicita dell'utente. L'utente riprendera' con un nuovo messaggio quando il processo e' terminato. Nel messaggio di ripresa suggerire: "La trascrizione batch e' terminata. Prosegui con review, normalizzazione, selezione transcript, generazione detailed_notes/classification/analysis e PDF per i nuovi video completati."
 
 Per richieste generiche come "ho messo un video in input/videos" o "analizza l'ultimo video", usare `--latest-video` se la richiesta non indica un file specifico. Se ci sono più input plausibili e scegliere l'ultimo non e' ragionevole dal contesto, chiedere quale file usare. Il context default e' `work_meetings`; usare macro-categorie solo quando l'utente le indica o il contenuto e' chiaramente non-meeting.
 

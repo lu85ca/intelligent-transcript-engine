@@ -10,6 +10,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from whisper_runtime import resolve_whisper_python, validate_whisper_runtime
+
 
 ALLOWED_CONTEXTS = {
     "work_meetings",
@@ -255,15 +257,16 @@ def step_payload(name: str, status: str, command: list[str] | None, outputs: lis
 
 
 def step1_command(root: Path, input_info: dict[str, Any], basename: str, force: bool) -> list[str]:
+    whisper_python = str(resolve_whisper_python())
     if input_info["input_type"] == "audio":
-        command = ["python3", str(root / "scripts" / "transcribe_audio_mlx.py"), str(root / "input" / "audio" / f"{basename}.wav")]
+        command = [whisper_python, str(root / "scripts" / "transcribe_audio_whisper.py"), str(root / "input" / "audio" / f"{basename}.wav")]
         if force:
             command.append("--force")
         return command
 
     audio_path = root / "input" / "audio" / f"{basename}.wav"
     if input_info["input_type"] in {"basename", "transcript_path"} and audio_path.exists():
-        command = ["python3", str(root / "scripts" / "transcribe_audio_mlx.py"), str(audio_path)]
+        command = [whisper_python, str(root / "scripts" / "transcribe_audio_whisper.py"), str(audio_path)]
         if force:
             command.append("--force")
         return command
@@ -360,6 +363,20 @@ def run_preprocessing_pipeline(args: argparse.Namespace, root: Path) -> tuple[di
         )
     else:
         command = step1_command(root, input_info, basename, args.force)
+        try:
+            validate_whisper_runtime()
+        except RuntimeError as exc:
+            steps.append(
+                step_payload(
+                    "transcription",
+                    "failed",
+                    command_for_display(command, root),
+                    [rel(paths["raw"], root), rel(paths["transcription_report"], root)],
+                    returncode=1,
+                    error=str(exc),
+                )
+            )
+            return finalize_failure(report, steps, report_path, str(exc))
         completed = run_command(command, root=root, verbose=args.verbose)
         status = "completed" if completed.returncode == 0 and paths["raw"].exists() and paths["transcription_report"].exists() else "failed"
         steps.append(

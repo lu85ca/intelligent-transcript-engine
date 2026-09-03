@@ -14,6 +14,7 @@ from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
 SPEC = importlib.util.spec_from_file_location(
     "run_preprocessing_pipeline",
     ROOT / "scripts" / "run_preprocessing_pipeline.py",
@@ -34,7 +35,7 @@ class FakeRunner:
     def __call__(self, command: list[str], *, root: Path, verbose: bool) -> subprocess.CompletedProcess[str]:
         self.commands.append(command)
         joined = " ".join(command)
-        if "process_videos.sh" in joined or "transcribe_audio_mlx.py" in joined:
+        if "process_videos.sh" in joined or "transcribe_audio_whisper.py" in joined:
             self.write_raw()
             return subprocess.CompletedProcess(command, 0, stdout="raw ok\n", stderr="")
         if "prepare_review_transcript.py" in joined:
@@ -168,7 +169,9 @@ class RunPreprocessingPipelineTests(unittest.TestCase):
             fake = FakeRunner(root, "sample")
             fake.write_raw()
 
-            with patch.object(run_preprocessing_pipeline, "run_command", fake):
+            with patch.object(run_preprocessing_pipeline, "run_command", fake), patch.object(
+                run_preprocessing_pipeline, "validate_whisper_runtime", return_value=Path("/configured/python3")
+            ):
                 report, code = run_preprocessing_pipeline.run_preprocessing_pipeline(self.args("sample"), root)
 
             self.assertEqual(code, 0)
@@ -182,12 +185,41 @@ class RunPreprocessingPipelineTests(unittest.TestCase):
             fake.write_raw()
             fake.write_reviewed()
 
-            with patch.object(run_preprocessing_pipeline, "run_command", fake):
+            with patch.object(run_preprocessing_pipeline, "run_command", fake), patch.object(
+                run_preprocessing_pipeline, "validate_whisper_runtime", return_value=Path("/configured/python3")
+            ):
                 report, code = run_preprocessing_pipeline.run_preprocessing_pipeline(self.args("sample"), root)
 
             self.assertEqual(code, 0)
             self.assertIn("normalize_transcript.py", " ".join(" ".join(command) for command in fake.commands))
             self.assertEqual(next(step for step in report["steps"] if step["name"] == "normalization")["status"], "completed")
+
+    def test_transcription_runtime_failure_stops_before_subprocess(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fake = FakeRunner(root, "sample")
+            with patch.object(run_preprocessing_pipeline, "run_command", fake), patch.object(
+                run_preprocessing_pipeline,
+                "validate_whisper_runtime",
+                side_effect=RuntimeError("large-v3 is missing; no download was attempted"),
+            ):
+                report, code = run_preprocessing_pipeline.run_preprocessing_pipeline(self.args("sample"), root)
+
+            self.assertEqual(code, 1)
+            self.assertEqual(report["pipeline_status"], "failed")
+            self.assertEqual(fake.commands, [])
+            self.assertIn("no download was attempted", report["reason"])
+
+    def test_step1_command_uses_whisper_python_not_system_python(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with patch.dict("os.environ", {"WHISPER_PYTHON": "/configured/whisper-python"}):
+                command = run_preprocessing_pipeline.step1_command(
+                    root, {"input_type": "audio"}, "sample", False
+                )
+
+            self.assertEqual(command[0], "/configured/whisper-python")
+            self.assertIn("transcribe_audio_whisper.py", command[1])
 
     def test_candidate_collection_invoked_without_promote(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -1,0 +1,14 @@
+{
+  "basename": "AVVOCATO AVVERTE- Mette la casa a nome dei figli? Questa decisione potrebbe COSTARLE la proprietà*",
+  "context": "work_meetings",
+  "source_reports": [
+    "output/transcription/AVVOCATO AVVERTE- Mette la casa a nome dei figli? Questa decisione potrebbe COSTARLE la proprietà*_transcription.json",
+    "output/review/AVVOCATO AVVERTE- Mette la casa a nome dei figli? Questa decisione potrebbe COSTARLE la proprietà*_review.json",
+    "output/normalization/AVVOCATO AVVERTE- Mette la casa a nome dei figli? Questa decisione potrebbe COSTARLE la proprietà*_normalization.json"
+  ],
+  "candidate_count": 0,
+  "candidates": [],
+  "warnings": [],
+  "updated_at": "2026-08-16T12:17:08.031517+00:00",
+  "candidate_file": "knowledge/work_meetings/candidates/AVVOCATO AVVERTE- Mette la casa a nome dei figli? Questa decisione potrebbe COSTARLE la proprietà*_candidates.json"
+}

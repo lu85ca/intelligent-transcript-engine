@@ -35,12 +35,12 @@ class AgentVideoSummaryWorkflowDocsTests(unittest.TestCase):
         skill = self.read(".agents/skills/transcript-intelligence/SKILL.md")
         readme = self.read("README.md")
 
-        self.assertIn("non avviare direttamente `scripts/transcribe_audio_mlx.py`", agents)
+        self.assertIn("non avviare direttamente `scripts/transcribe_audio_whisper.py`", agents)
         self.assertIn("non fare polling", agents)
         self.assertIn("fermati subito", agents)
-        self.assertIn("do not run `scripts/transcribe_audio_mlx.py` directly", skill)
+        self.assertIn("do not run `scripts/transcribe_audio_whisper.py` directly", skill)
         self.assertIn("Do not monitor, poll or continue to Step 6A in the same turn", skill)
-        self.assertIn("Codex non deve restare in chat ad aspettare la fine di MLX Whisper", readme)
+        self.assertIn("Codex non deve restare in chat ad aspettare la fine di OpenAI Whisper locale", readme)
         self.assertIn("Codex deve usare start_transcription_batch.py", readme)
 
     def test_skill_keeps_technical_metadata_out_of_content(self) -> None:
